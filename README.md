@@ -1,6 +1,6 @@
 ### 全端启萌「LumenGuide」
 ##### 一个基于 WinUI 风格的电脑“0”基础教程
-##### [跳转到启萌世界TwT](https://xzhnew.github.io/LumenGuide/)
+##### [点击跳转到启萌世界TwT](https://xzhnew.github.io/LumenGuide/)
 
 本项目特别感谢:
 1. [《你缺失的那门计算机课》](https://www.criwits.top/) —— 带给我的创作灵感，您可以在其中学习到更加科学的电脑知识。
