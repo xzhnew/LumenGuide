@@ -1,13 +1,23 @@
 <template>
   <div class="win-nav-shell" :class="shellClasses" :style="paneStyle" ref="shellRef">
-    <nav v-if="isTopNavigation" class="win-nav-top-bar" ref="navRef">
+    <nav v-if="isTopNavigation || isLeftMinimalMode" class="win-nav-top-bar" ref="navRef">
       <div class="win-nav-indicator-track" ref="indicatorTrack">
         <div class="win-nav-indicator" :style="indicatorStyle"></div>
       </div>
-      <div v-if="showBackButtonResolved" class="win-nav-back-button" :class="{ 'is-disabled': !canGoBack }" role="button" :aria-disabled="!canGoBack" @click="onBackClick" @mousedown="onBackDown" @mouseup="onBackUp" @mouseleave="onBackLeave" ref="topBackButtonRef">
-        <span class="icon animated-icon animated-icon-back" :class="backClass" @animationend="onBackAnimEnd">&#xE72B;</span>
+      <!-- 汉堡按钮：LeftMinimal 模式始终显示；Top 模式桌面端隐藏 -->
+      <div v-if="isLeftMinimalMode" class="win-nav-hamburger win-nav-hamburger-top" @click="toggleCompact"
+        :class="{ 'is-active': !isCompact }"
+        @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
+        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
       </div>
-      <div class="win-nav-menu win-nav-top-primary-menu" ref="topPrimaryMenuRef">
+      <!-- Top 模式：汉堡按钮用于移动端菜单（桌面端由 CSS 隐藏） -->
+      <div v-if="isTopNavigation" class="win-nav-hamburger win-nav-hamburger-top" @click="toggleTopMenu"
+        :class="{ 'is-active': topMenuExpanded }"
+        @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
+        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
+      </div>
+      <!-- Top 模式：顶部菜单项（LeftMinimal 模式下隐藏） -->
+      <div v-if="isTopNavigation" class="win-nav-menu win-nav-top-primary-menu" :class="{ 'is-mobile-hidden': !topMenuExpanded && isSmallScreen }" ref="topPrimaryMenuRef">
         <template v-for="item in topVisibleMenuItems" :key="item.value">
           <div v-if="!item.children" class="win-nav-item" :class="{ 'is-selected': selectedValue === item.value }" @click="onItemClick(item)" :ref="el => setItemRef(item.value, el)">
             <span class="icon">{{ item.icon }}</span>
@@ -25,8 +35,13 @@
           <span class="icon">&#xE712;</span>
         </div>
       </div>
-      <div style="flex:1"></div>
-      <div class="win-nav-menu win-nav-top-footer-menu" ref="topFooterMenuRef">
+      <!-- 搜索框：两种模式都显示 -->
+      <div class="win-nav-top-search-wrap">
+        <slot name="topSearch"></slot>
+      </div>
+      <div class="win-nav-top-spacer"></div>
+      <!-- 底部菜单 + 设置（LeftMinimal 模式下隐藏，设置通过左面板访问） -->
+      <div v-if="isTopNavigation" class="win-nav-menu win-nav-top-footer-menu" ref="topFooterMenuRef">
         <template v-for="item in footerItems" :key="item.value">
           <div class="win-nav-item" :class="{ 'is-selected': selectedValue === item.value }" @click="onItemClick(item)" :ref="el => setItemRef(item.value, el)">
             <span class="icon">{{ item.icon }}</span>
@@ -38,7 +53,7 @@
           <span class="label">{{ settingsLabel }}</span>
         </div>
       </div>
-      <div class="win-nav-top-measure" ref="topMeasureRef" aria-hidden="true">
+      <div v-if="isTopNavigation" class="win-nav-top-measure" ref="topMeasureRef" aria-hidden="true">
         <template v-for="item in menuItems" :key="item.value">
           <div class="win-nav-item" :data-value="item.value">
             <span class="icon">{{ item.icon }}</span>
@@ -51,14 +66,24 @@
         </div>
       </div>
     </nav>
-    <nav v-else class="win-nav-left-panel" :class="{ 'is-compact': isCompact, 'is-minimal': isLeftMinimalMode }" :style="paneStyle" ref="navRef">
+    <!-- 左侧导航面板：非 Top 模式 + LeftMinimal 覆盖面板均渲染 -->
+    <nav v-if="!isTopNavigation || isLeftMinimalMode" class="win-nav-left-panel" :class="{ 'is-compact': isCompact, 'is-minimal': isLeftMinimalMode }" :style="paneStyle" ref="navRef">
+      <!-- LeftMinimal 模式：覆盖面板顶部栏 [←] [☰] -->
+      <div v-if="isLeftMinimalMode && !isCompact" class="win-nav-minimal-top">
+        <div v-if="showBackButtonResolved" class="win-nav-back-button" :class="{ 'is-disabled': !canGoBack }" role="button" :aria-disabled="!canGoBack" @click="onBackClick" @mousedown="onBackDown" @mouseup="onBackUp" @mouseleave="onBackLeave">
+          <span class="icon animated-icon animated-icon-back" :class="backClass" @animationend="onBackAnimEnd">&#xE72B;</span>
+        </div>
+        <div class="win-nav-hamburger" @click="toggleCompact" @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
+          <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
+        </div>
+      </div>
       <div class="win-nav-indicator-track" ref="indicatorTrack" v-show="!isLeftMinimalMode || !isCompact">
         <div class="win-nav-indicator" :class="{ 'is-child': indicatorIsChild }" :style="indicatorStyle"></div>
       </div>
-      <div v-if="showBackButtonInLeftNav" class="win-nav-back-button" :class="{ 'is-disabled': !canGoBack }" role="button" :aria-disabled="!canGoBack" @click="onBackClick" @mousedown="onBackDown" @mouseup="onBackUp" @mouseleave="onBackLeave">
+      <div v-if="showBackButtonInLeftNav && !isLeftMinimalMode" class="win-nav-back-button" :class="{ 'is-disabled': !canGoBack }" role="button" :aria-disabled="!canGoBack" @click="onBackClick" @mousedown="onBackDown" @mouseup="onBackUp" @mouseleave="onBackLeave">
         <span class="icon animated-icon animated-icon-back" :class="backClass" @animationend="onBackAnimEnd">&#xE72B;</span>
       </div>
-      <div v-if="isPaneToggleButtonVisible" class="win-nav-hamburger" @click="toggleCompact" @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
+      <div v-if="isPaneToggleButtonVisible && !isLeftMinimalMode" class="win-nav-hamburger" @click="toggleCompact" @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
         <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
       </div>
       <div v-if="$slots.paneHeader || paneTitle || $slots.autoSuggestBox" class="win-nav-pane-top" v-show="!isLeftMinimalMode || !isCompact">
@@ -106,6 +131,10 @@
       </div>
     </nav>
     <main class="win-nav-content">
+      <!-- 内容区顶部：仅左导航（非 Minimal）时显示 -->
+      <div v-if="$slots.contentHeader && !isTopNavigation && !isLeftMinimalMode" class="win-nav-content-header">
+        <slot name="contentHeader"></slot>
+      </div>
       <div v-if="$slots.header || header" class="win-nav-page-header">
         <slot name="header">{{ header }}</slot>
       </div>
@@ -157,7 +186,7 @@ const props = defineProps({
   isPaneOpen: { type: Boolean, default: undefined },
   openPaneLength: { type: Number, default: 320 },
   compactPaneLength: { type: Number, default: 48 },
-  compactModeThresholdWidth: { type: Number, default: 641 },
+  compactModeThresholdWidth: { type: Number, default: 640 },
   expandedModeThresholdWidth: { type: Number, default: 1008 },
   paneTitle: { type: String, default: '' },
   header: { type: String, default: '' },
@@ -170,6 +199,18 @@ const titleBarVisible = inject('winTitleBarVisible', ref(false));
 const hasTitlebar = computed(() => titleBarVisible.value);
 const emit = defineEmits(['update:selectedValue', 'update:isPaneOpen', 'back']);
 const isCompact = ref(false);
+const topMenuExpanded = ref(false);
+const isSmallScreen = ref(false);
+
+const updateScreenSize = () => {
+  isSmallScreen.value = typeof window !== 'undefined' && window.innerWidth < 640;
+};
+
+// 小屏模式：切换顶部菜单显示
+const toggleTopMenu = () => {
+  topMenuExpanded.value = !topMenuExpanded.value;
+};
+
 const shellRef = ref(null);
 const navRef = ref(null);
 const indicatorTrack = ref(null);
@@ -197,11 +238,17 @@ const containerWidth = ref(typeof window === 'undefined' ? props.expandedModeThr
 
 const normalizedPaneDisplayMode = computed(() => props.paneDisplayMode || props.position);
 const resolvedPaneDisplayMode = computed(() => {
-  if (normalizedPaneDisplayMode.value !== 'Auto') return normalizedPaneDisplayMode.value;
   const width = containerWidth.value || (typeof window === 'undefined' ? props.expandedModeThresholdWidth : window.innerWidth);
-  if (width >= props.expandedModeThresholdWidth) return 'Left';
-  if (width >= props.compactModeThresholdWidth) return 'LeftCompact';
-  return 'LeftMinimal';
+  const mode = normalizedPaneDisplayMode.value;
+  // Auto 模式：根据窗口宽度自动切换
+  if (mode === 'Auto') {
+    if (width >= props.expandedModeThresholdWidth) return 'Left';
+    if (width >= props.compactModeThresholdWidth) return 'LeftCompact';
+    return 'LeftMinimal';
+  }
+  // Small 模式：始终使用小屏布局（汉堡 + 覆盖面板）
+  if (mode === 'Small') return 'LeftMinimal';
+  return mode;
 });
 const isTopNavigation = computed(() => resolvedPaneDisplayMode.value === 'Top');
 const isLeftMinimalMode = computed(() => resolvedPaneDisplayMode.value === 'LeftMinimal');
@@ -230,7 +277,8 @@ const shellClasses = computed(() => [
   isLeftOverlayMode.value ? 'is-overlay-left' : '',
   isLeftMinimalMode.value ? 'is-left-minimal' : '',
   isLeftCompactMode.value ? 'is-left-compact' : '',
-  hasTitlebar.value ? 'has-titlebar' : ''
+  hasTitlebar.value ? 'has-titlebar' : '',
+  isSmallScreen.value ? 'is-small-screen' : ''
 ]);
 
 let itemRefs = {};
@@ -828,6 +876,9 @@ provide('winNavigationBack', {
   history: selectionHistory
 });
 
+provide('isSmallScreen', isSmallScreen);
+provide('isTopNavigation', isTopNavigation);
+
 defineExpose({
   goBack,
   registerBackHandler,
@@ -869,6 +920,8 @@ const onDocumentPointerDown = (event) => {
   if (!isLeftOverlayMode.value || isCompact.value) return;
   const target = event.target;
   if (navRef.value?.contains(target)) return;
+  if (target?.closest?.('.win-nav-top-bar')) return;
+  if (target?.closest?.('.win-nav-hamburger')) return;
   if (target?.closest?.('.win-menu-flyout-wrap')) return;
   setCompact(true);
 };
@@ -1181,6 +1234,7 @@ let resizeTimer = null;
 const onResize = () => {
   containerWidth.value = shellRef.value?.getBoundingClientRect().width || (typeof window === 'undefined' ? props.expandedModeThresholdWidth : window.innerWidth);
   updateTopNavigationLayout();
+  updateScreenSize();
   skipTransition = true;
   if (resizeTimer) cancelAnimationFrame(resizeTimer);
   if (!lastSelectedEl || !navRef.value || !navRef.value.contains(lastSelectedEl)) {
@@ -1291,6 +1345,7 @@ onMounted(() => {
   window.addEventListener('resize', onResize);
   document.addEventListener('pointerdown', onDocumentPointerDown, true);
   initIndicator();
+  updateScreenSize();
 });
 
 onBeforeUnmount(() => {
@@ -1463,6 +1518,11 @@ watch(() => props.selectedValue, (val, oldVal) => {
       }
     });
   }
+
+  // 小屏模式下选中页面后关闭菜单
+  if (topMenuExpanded.value) {
+    topMenuExpanded.value = false;
+  }
 });</script>
 <style>
   .win-nav-shell {
@@ -1514,6 +1574,17 @@ watch(() => props.selectedValue, (val, oldVal) => {
   .win-nav-shell.is-top .win-nav-content {
     border-top: 1px solid var(--ctrl-border-rest);
     border-radius: 0;
+  }
+
+  .win-nav-content-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--layer-default);
+    backdrop-filter: var(--flyout-backdrop);
+    -webkit-backdrop-filter: var(--flyout-backdrop);
+    padding: 12px 24px 8px 24px;
+    border-bottom: 1px solid var(--ctrl-border-rest);
   }
 
   .win-nav-content-inner {
@@ -1572,11 +1643,74 @@ watch(() => props.selectedValue, (val, oldVal) => {
       width: var(--win-nav-compact-pane-length, 48px);
     }
 
+    /* LeftMinimal 模式下，紧凑面板完全隐藏（不占空间、不可交互） */
     .win-nav-shell.is-left-minimal .win-nav-left-panel.is-compact {
-      width: var(--win-nav-compact-pane-length, 48px);
-      background: transparent;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
+      width: 0 !important;
+      min-width: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      visibility: hidden;
+      opacity: 0;
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      pointer-events: none !important;
+      box-shadow: none !important;
+    }
+
+    /* LeftMinimal 模式：覆盖面板顶部栏 [←返回] [☰汉堡] */
+    .win-nav-minimal-top {
+      display: flex;
+      align-items: center;
+      height: 48px;
+      padding: 0 8px;
+      gap: 4px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--ctrl-stroke-secondary);
+    }
+
+    .win-nav-minimal-top .win-nav-back-button {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-primary);
+      border-radius: 4px;
+    }
+
+    .win-nav-minimal-top .win-nav-back-button:hover {
+      background: var(--subtle-fill-secondary);
+    }
+
+    .win-nav-minimal-top .win-nav-back-button.is-disabled {
+      opacity: 0.4;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .win-nav-minimal-top .win-nav-hamburger {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-primary);
+      border-radius: 4px;
+      font-size: 18px;
+    }
+
+    .win-nav-minimal-top .win-nav-hamburger:hover {
+      background: var(--subtle-fill-secondary);
+    }
+
+    /* LeftMinimal 模式下，面板展开时覆盖全屏 */
+    .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel:not(.is-compact) {
+      width: 100%;
+      max-width: 100vw;
+      pointer-events: auto;
     }
 
     .win-nav-left-panel .win-nav-indicator-track {
@@ -1674,6 +1808,15 @@ watch(() => props.selectedValue, (val, oldVal) => {
       line-height: 16px;
     }
 
+  /* 顶部导航栏中的汉堡按钮（桌面端隐藏，移动端显示） */
+  .win-nav-hamburger-top {
+    display: none;
+  }
+
+  .win-nav-hamburger-top.is-active .icon {
+    color: var(--accent-base);
+  }
+
     .win-nav-back-button .icon {
       width: 16px;
       height: 16px;
@@ -1718,6 +1861,11 @@ watch(() => props.selectedValue, (val, oldVal) => {
     transition: width var(--normal-duration) var(--fast-out-slow-in), background var(--normal-duration) var(--fast-out-slow-in);
     display: flex;
     align-items: center;
+  }
+
+  .win-nav-top-spacer {
+    flex: 1;
+    min-width: 0;
   }
 
   .win-nav-top-measure {
@@ -2029,4 +2177,199 @@ watch(() => props.selectedValue, (val, oldVal) => {
     background-color: color-mix(in srgb, var(--ctrl-strong-stroke) 76%, transparent);
   }
   */
+
+/* ===== 响应式适配（Fluent Design 移动端风格） ===== */
+
+/* 小屏设备 < 768px：内容区内边距缩小 */
+@media (max-width: 768px) {
+  .win-nav-content-inner {
+    padding: 16px 16px;
+  }
+
+  .win-nav-content-header {
+    padding: 8px 16px 8px 16px;
+  }
+
+  .win-nav-page-header {
+    padding: 0 16px;
+    font-size: 18px;
+  }
+
+  .win-nav-page-header + .win-nav-content-inner {
+    padding-top: 12px;
+  }
+
+  .win-nav-shell.is-left .win-nav-content {
+    border-radius: 0;
+  }
+
+  .win-nav-left-panel:not(.is-compact) {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+/* 手机设备 < 640px：导航覆盖层 + 内容全宽 */
+@media (max-width: 640px) {
+  .win-nav-content-inner {
+    padding: 12px 12px;
+  }
+
+  .win-nav-content-header {
+    padding: 8px 12px 8px 12px;
+  }
+
+  .win-nav-page-header {
+    padding: 0 12px;
+    font-size: 16px;
+  }
+
+  .win-nav-shell.is-overlay-left .win-nav-left-panel {
+    width: 100%;
+    max-width: 100vw;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .win-nav-shell.is-overlay-left .win-nav-content {
+    margin-left: 0;
+    border-radius: 0;
+  }
+
+  /* 左导航紧凑模式下，内容区全部可用 */
+  .win-nav-shell.is-left-compact .win-nav-content {
+    margin-left: var(--win-nav-compact-pane-length, 48px);
+  }
+
+  /* ===== 顶导航模式 - 小屏布局 ===== */
+  .win-nav-top-bar {
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .win-nav-top-bar .win-nav-item {
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  /* 小屏：始终显示顶部汉堡按钮 */
+  .win-nav-hamburger-top {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    flex-shrink: 0;
+  }
+
+  /* 小屏：隐藏顶栏内联菜单（改用抽屉面板） */
+  .win-nav-top-primary-menu {
+    display: none !important;
+  }
+
+  /* 小屏：隐藏顶栏右侧 footer（设置已移入抽屉） */
+  .win-nav-top-footer-menu.is-small-screen-hide {
+    display: none !important;
+  }
+
+  /* 小屏：搜索框与汉堡同行，自动伸展 */
+  .win-nav-top-search-wrap {
+    flex: 1;
+    min-width: 0;
+    max-width: 220px;
+  }
+
+  .win-nav-top-search-wrap .win-search-box {
+    width: 100%;
+  }
+
+  /* 小屏：隐藏顶部右侧的 footer 菜单（设置项已移入汉堡菜单） */
+  .win-nav-top-footer-menu {
+    display: none;
+  }
+
+  /* 小屏：spacer 隐藏，搜索框已由 flex:1 推到合适位置 */
+  .win-nav-top-spacer {
+    display: none;
+  }
+
+  /* 小屏：汉堡展开菜单内的分隔线和设置项 */
+  .win-nav-menu-separator {
+    height: 1px;
+    background: var(--ctrl-stroke-secondary);
+    margin: 4px 12px;
+  }
+
+  .win-nav-menu-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 8px;
+  }
+
+  .win-nav-menu-footer .win-nav-item {
+    padding: 0 12px;
+    min-height: 36px;
+  }
+
+  /* LeftMinimal 模式：覆盖面板内返回按钮始终可见 */
+  .win-nav-minimal-top .win-nav-back-button {
+    display: flex;
+  }
+}
+
+/* ===== LeftMinimal 模式：顶部栏样式（始终显示，不依赖屏幕宽度）===== */
+.win-nav-shell.is-left-minimal .win-nav-top-bar {
+  display: flex;
+}
+
+.win-nav-shell.is-left-minimal .win-nav-hamburger-top {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  flex-shrink: 0;
+}
+
+.win-nav-shell.is-left-minimal .win-nav-top-search-wrap {
+  flex: 1;
+  min-width: 0;
+  max-width: 240px;
+  margin-left: auto;
+}
+
+.win-nav-shell.is-left-minimal .win-nav-top-spacer {
+  display: none;
+}
+
+    /* LeftMinimal 模式：shell 纵向排列（顶栏在上，内容在下） */
+    .win-nav-shell.is-left-minimal {
+      flex-direction: column;
+    }
+
+    /* LeftMinimal 模式下内容区全宽，不被左面板推挤 */
+    .win-nav-shell.is-left-minimal .win-nav-content {
+      margin-left: 0;
+    }
+
+    /* LeftMinimal 模式：覆盖面板亚克力效果 */
+    .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel {
+      background: color-mix(in srgb, var(--app-bg) 82%, transparent);
+      backdrop-filter: blur(28px) saturate(1.35);
+      -webkit-backdrop-filter: blur(28px) saturate(1.35);
+    }
+
+/* 小屏（<640px）时 LeftMinimal 顶栏进一步紧凑 */
+@media (max-width: 640px) {
+  .win-nav-shell.is-left-minimal .win-nav-top-bar {
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .win-nav-shell.is-left-minimal .win-nav-top-search-wrap {
+    max-width: 200px;
+  }
+
+  .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel {
+    width: 100%;
+    max-width: 100vw;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
 </style>

@@ -1,526 +1,388 @@
 <template>
-  <div class="home-page">
-    <div class="home-hero">
-      <img class="home-hero-image" :src="heroImage" alt="" />
-      <div class="home-hero-mask"></div>
-      <div class="home-hero-text">
-        <div class="home-hero-subtitle">WinUI on Web 1.0-Insider</div>
-        <div class="home-hero-title">WinUI on Web Gallery</div>
+  <div class="intro-page">
+    <!-- ====== Hero（项目介绍） ====== -->
+    <section class="hero">
+
+      <div class="title-row">
+        <h1><strong>全端启萌</strong></h1>
+        <span class="en">FirstLight</span>
       </div>
-      <div class="home-hero-tiles-wrap">
-        <div class="home-hero-tiles">
-          <a v-for="t in tiles" :key="t.title" class="home-hero-tile" :href="t.link" target="_blank" rel="noopener">
-            <div class="home-hero-tile-icon"><span class="icon">{{ t.icon }}</span></div>
-            <div class="home-hero-tile-body">
-              <div class="home-hero-tile-title">{{ t.title }}</div>
-              <div class="home-hero-tile-desc">{{ t.desc }}</div>
-            </div>
-          </a>
-        </div>
+      <div class="subhead-wrap">
+        <div class="subhead">每一台电脑的第一束光</div>
+      </div>
+
+      <p class="desc">
+        从 Windows 到 macOS，从 Linux 到 HarmonyOS<br />
+        用最接地气的方式，带你走进电脑的世界~<br />
+      </p>
+    </section>
+
+    <!-- ====== 九大篇章 ====== -->
+    <div class="section-title"><span class="icon section-icon">&#xE8D9;</span> 九大篇章</div>
+      <div class="chapter-grid">
+        <button
+          v-for="c in chapters"
+          :key="c.key"
+          class="chapter-chip"
+          @click="goPage(c.key)"
+        >
+          <span class="icon chapter-icon">{{ c.icon }}</span>
+          {{ c.name }}
+        </button>
+      </div>
+
+    <!-- ====== 最近访问 / 我的收藏（保留现有功能） ====== -->
+    <div class="rf-grid">
+      <div class="sidebar-card">
+        <h3 class="sidebar-title">
+          <span class="icon">&#xE823;</span>
+          最近访问
+        </h3>
+        <div v-if="!recentPages.length" class="sidebar-empty">暂无访问记录</div>
+        <ul v-else class="sidebar-list">
+          <li v-for="item in recentPages" :key="item.key" class="sidebar-item" @click="goPage(item.key)">
+            <span class="icon sidebar-dot">{{ item.icon }}</span>
+            <span>{{ item.titleZh || item.title }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-card">
+        <h3 class="sidebar-title">
+          <span class="icon">&#xE735;</span>
+          我的收藏
+        </h3>
+        <div v-if="!favoritePages.length" class="sidebar-empty">暂无收藏</div>
+        <ul v-else class="sidebar-list">
+          <li v-for="item in favoritePages" :key="item.key" class="sidebar-item" @click="goPage(item.key)">
+            <span class="icon sidebar-dot">&#xE734;</span>
+            <span>{{ item.titleZh || item.title }}</span>
+          </li>
+        </ul>
       </div>
     </div>
 
-    <div class="home-selector-bar">
-      <div class="home-selector-item" :class="{ active: filter === 'recent' }" @click="filter = 'recent'">
-        <span class="icon">&#xE823;</span>
-        <span>Recent</span>
-      </div>
-      <div class="home-selector-item" :class="{ active: filter === 'favorites' }" @click="filter = 'favorites'">
-        <span class="icon">&#xE734;</span>
-        <span>Favorites</span>
-      </div>
+    <!-- ====== 页脚（双开源协议） ====== -->
+    <div class="footer">
+      <span>© 2026 全端启萌</span>
+      <span class="license">
+        灵感来源于
+        <a :href="COURSE_URL" target="_blank" rel="noopener">《你缺失的那门计算机课》</a>
+        · CC BY-NC-SA 4.0
+        &nbsp;·&nbsp;
+        基于
+        <a :href="WINULONWEB_URL" target="_blank" rel="noopener">WinUlonWeb</a>
+        · GPL-3.0
+      </span>
     </div>
-
-    <template v-if="filter === 'recent'">
-      <div class="home-section">
-        <div class="home-section-title">Recently visited</div>
-        <div class="home-h-scroll">
-          <div class="home-card-row">
-            <div v-for="item in recentVisited" :key="item.key" class="home-card home-card-fixed" @click="currentPage = item.key">
-              <div class="home-card-icon-wrap"><span class="icon">{{ item.icon }}</span></div>
-              <div class="home-card-text">
-                <div class="home-card-title">{{ item.title }}</div>
-                <div class="home-card-desc">{{ item.desc }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="home-section">
-        <div class="home-section-title">Recently added or updated</div>
-        <div class="home-card-grid">
-          <div v-for="item in recentAdded" :key="item.key" class="home-card" @click="currentPage = item.key">
-            <div class="home-card-icon-wrap"><span class="icon">{{ item.icon }}</span></div>
-            <div class="home-card-text">
-              <div class="home-card-title">{{ item.title }}</div>
-              <div class="home-card-desc">{{ item.desc }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <template v-else>
-      <div class="home-section">
-        <div v-if="favoriteItems.length === 0" class="home-favorites-empty">
-          <span class="icon home-favorites-empty-icon">&#xE734;</span>
-          <div class="home-favorites-empty-title">No favorites yet</div>
-          <div class="home-favorites-empty-desc">Favorite samples by clicking the star icon on the sample page.</div>
-        </div>
-        <div v-else class="home-card-grid">
-          <div v-for="item in favoriteItems" :key="item.key" class="home-card" @click="currentPage = item.key">
-            <div class="home-card-icon-wrap"><span class="icon">{{ item.icon }}</span></div>
-            <div class="home-card-text">
-              <div class="home-card-title">{{ item.title }}</div>
-              <div class="home-card-desc">{{ item.desc }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, inject, onMounted, onUnmounted } from 'vue';
-import splashLight from '../assets/HomePage/Splash-Light.png';
-import splashDark from '../assets/HomePage/Splash-Dark.png';
+import { computed, inject } from 'vue';
+import { getPageMeta, chapterArticles, chapterNames } from '../data/pages';
 import { useFavorites } from '../composables/useFavorites';
 
 const currentPage = inject('currentPage');
+const goPage = (key) => { if (currentPage) currentPage.value = key; };
 
+// 九大篇章 -> 点击进入各卷第 1 章
+const chapters = chapterNames.map((name, i) => {
+  const first = chapterArticles.find(p => p.key === `ch${i + 1}-1`);
+  return { name, key: `ch${i + 1}-1`, icon: first?.icon || '\uE8D9' };
+});
+
+// 最近访问（排除首页自身）
+const getRecentHistory = () => {
+  try {
+    const raw = localStorage.getItem('winui-recent-pages');
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+};
+const recentPages = computed(() =>
+  getRecentHistory()
+    .filter(k => k !== 'home')
+    .map(key => getPageMeta(key))
+    .filter(Boolean)
+    .slice(0, 5)
+);
+
+// 我的收藏（排除首页自身）
 const { favorites } = useFavorites();
+const favoritePages = computed(() =>
+  favorites.value
+    .filter(k => k !== 'home')
+    .map(key => getPageMeta(key))
+    .filter(Boolean)
+    .slice(0, 5)
+);
 
-const isDark = ref(false);
-
-const detectTheme = () => {
-  const html = document.documentElement;
-
-  const isManualLight = html.classList.contains('theme-light') || html.classList.contains('light') || html.getAttribute('data-theme') === 'light' || html.getAttribute('theme') === 'light';
-
-  const isManualDark = html.classList.contains('theme-dark') || html.classList.contains('dark') || html.getAttribute('data-theme') === 'dark' || html.getAttribute('theme') === 'dark' || document.body.classList.contains('dark');
-
-  if (isManualLight) {
-    isDark.value = false;
-  } else if (isManualDark) {
-    isDark.value = true;
-  } else {
-    isDark.value = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-};
-
-let themeObserver = null;
-let mediaQueryList = null;
-
-const onSystemThemeChange = () => {
-  detectTheme();
-};
-
-onMounted(() => {
-  detectTheme();
-
-  themeObserver = new MutationObserver(detectTheme);
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'theme', 'class'] });
-  themeObserver.observe(document.body, { attributes: true, attributeFilter: ['data-theme', 'theme', 'class'] });
-
-  if (window.matchMedia) {
-    mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQueryList.addEventListener('change', onSystemThemeChange);
-  }
-});
-
-onUnmounted(() => {
-  themeObserver?.disconnect();
-  if (mediaQueryList) {
-    mediaQueryList.removeEventListener('change', onSystemThemeChange);
-  }
-});
-
-const heroImage = computed(() => isDark.value ? splashDark : splashLight);
-
-const filter = ref('recent');
-
-const tiles = [
-  { icon: '\uE7C3', title: 'Getting started', desc: 'Get started with WinUI and explore detailed documentation.', link: 'https://aka.ms/winui-getstarted' },
-  { icon: '\uE790', title: 'Design', desc: 'Guidelines and toolkits for creating stunning WinUI experiences.', link: 'https://learn.microsoft.com/windows/apps/design/' },
-  { icon: '\uE71B', title: 'WinUI on GitHub', desc: 'Explore the WinUI source code and repository.', link: 'https://github.com/microsoft/microsoft-ui-xaml' },
-  { icon: '\uE74C', title: 'Community Toolkit', desc: 'A collection of helper functions, controls, and app services.', link: 'https://learn.microsoft.com/windows/communitytoolkit/' },
-  { icon: '\uE943', title: 'Code samples', desc: 'Find samples that demonstrate specific tasks, features, and APIs.', link: 'https://learn.microsoft.com/windows/apps/get-started/samples' },
-  { icon: '\uE7B8', title: 'Partner Center', desc: 'Upload your app to the Store.', link: 'https://developer.microsoft.com/windows/' }
-];
-
-const openTile = (t) => { window.open(t.link, '_blank'); };
-
-const recentVisited = [
-  { key: 'button', icon: '\uE71A', title: 'Button', desc: 'A control that responds to user input and triggers an event.' },
-  { key: 'combobox', icon: '\uE7FB', title: 'ComboBox', desc: 'Lets users pick one item from a list, with the option to enter custom text.' },
-  { key: 'slider', icon: '\uE9E9', title: 'Slider', desc: 'A control that lets the user select from a range of values by moving a thumb.' },
-  { key: 'toggleswitch', icon: '\uF19F', title: 'ToggleSwitch', desc: 'Switch that can be toggled between two states.' },
-  { key: 'splitview', icon: '\uE8A4', title: 'SplitView', desc: 'A container with two views: one for primary content and one for navigation.' }
-];
-
-const recentAdded = [
-  { key: 'colorpicker', icon: '\uEF3C', title: 'ColorPicker', desc: 'Lets the user pick a color using a color spectrum, sliders, and text input.' },
-  { key: 'expander', icon: '\uE8C4', title: 'Expander', desc: 'A control with a header that shows or hides content.' },
-  { key: 'rating', icon: '\uE734', title: 'RatingControl', desc: 'Allows users to view and set ratings.' },
-  { key: 'flipview', icon: '\uF1CB', title: 'FlipView', desc: 'Lets people browse images or other items, one at a time.' },
-  { key: 'pulltorefresh', icon: '\uE72C', title: 'PullToRefresh', desc: 'Refresh content with a pulling gesture.' },
-  { key: 'treeview', icon: '\uED41', title: 'TreeView', desc: 'Display hierarchical data.' },
-  { key: 'splitbutton', icon: '\uE90D', title: 'SplitButton', desc: 'A two-part button that displays a flyout when its secondary part is clicked.' },
-  { key: 'calendarview', icon: '\uE787', title: 'CalendarView', desc: 'Shows a calendar that lets a user choose a date.' },
-  { key: 'teachingtip', icon: '\uEC42', title: 'TeachingTip', desc: 'A flyout-like control used to deliver contextual information.' },
-  { key: 'contentdialog', icon: '\uE8BD', title: 'ContentDialog', desc: 'A dialog that can be customized to contain any UI content.' },
-  { key: 'rating', icon: '\uE735', title: 'Rating', desc: 'Capture user sentiment with stars.' },
-  { key: 'gridview', icon: '\uF0E2', title: 'GridView', desc: 'Items in a flexible grid.' }
-];
-
-// \u6240\u6709\u9875\u9762\u7684\u5B8C\u6574\u5143\u6570\u636E
-const allPagesMetadata = [
-  ...recentVisited,
-  ...recentAdded,
-  { key: 'datepicker', icon: '\uE8BF', title: 'DatePicker', desc: 'A control that lets users pick a date value.' },
-  { key: 'timepicker', icon: '\uE823', title: 'TimePicker', desc: 'A control that lets users pick a time value.' },
-  { key: 'calendardatepicker', icon: '\uE787', title: 'CalendarDatePicker', desc: 'A control that lets users pick a date from a calendar.' },
-  { key: 'togglebutton', icon: '\uEF1F', title: 'ToggleButton', desc: 'A button that can be on or off.' },
-  { key: 'checkbox', icon: '\uE73D', title: 'CheckBox', desc: 'A control that a user can select or clear.' },
-  { key: 'radiobuttons', icon: '\uECCB', title: 'RadioButtons', desc: 'A control that allows a user to select a single option from a group of options.' },
-  { key: 'togglesplitbutton', icon: '\uE90D', title: 'ToggleSplitButton', desc: 'A toggleable split button.' },
-  { key: 'dropdownbutton', icon: '\uE70D', title: 'DropDownButton', desc: 'A button that displays a flyout of choices when clicked.' },
-  { key: 'hyperlinkbutton', icon: '\uE71B', title: 'HyperlinkButton', desc: 'A button that appears as a hyperlink.' },
-  { key: 'listview', icon: '\uE8FD', title: 'ListView', desc: 'A control that presents a collection of items in a vertical list.' },
-  { key: 'listbox', icon: '\uEA37', title: 'ListBox', desc: 'A control that presents an inline list of items that the user can select from.' },
-  { key: 'splitview', icon: '\uE8BC', title: 'SplitView', desc: 'A container with two views: one for primary content and one for navigation.' },
-  { key: 'flyout', icon: '\uE8A8', title: 'Flyout', desc: 'A lightweight popup container.' },
-  { key: 'popup', icon: '\uE7C4', title: 'Popup', desc: 'Displays content on top of existing content.' },
-  { key: 'animatedvisualplayer', icon: '\uF5B0', title: 'AnimatedVisualPlayer', desc: 'Plays animated content.' },
-  { key: 'captureelement', icon: '\uE722', title: 'Capture Element / Camera', desc: 'Captures media from a camera.' },
-  { key: 'image', icon: '\uE8B9', title: 'Image', desc: 'Displays an image.' },
-  { key: 'mediaplayerelement', icon: '\uE714', title: 'MediaPlayerElement', desc: 'Plays media content.' },
-  { key: 'personpicture', icon: '\uE77B', title: 'PersonPicture', desc: 'Displays a person\'s picture.' }
-];
-
-// \u6839\u636E\u6536\u85CF\u7684key\u751F\u6210\u5B8C\u6574\u7684\u6536\u85CF\u9879\u4FE1\u606F
-const favoriteItems = computed(() => {
-  return favorites.value
-    .map(key => allPagesMetadata.find(item => item.key === key))
-    .filter(Boolean);
-});
+const COURSE_URL = 'https://www.criwits.top/missing';
+const WINULONWEB_URL = 'https://furry-xiyi.github.io/WinUIonWeb/';
 </script>
 
 <style scoped>
-.home-page {
+.intro-page {
+  --brand: #0067C0;
+  --brand-2: #4CC2FF;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 8px 4px 40px;
+}
+
+/* ===== Hero ===== */
+.hero {
+  background: var(--card-bg-default);
+  border: 1px solid var(--card-stroke);
+  border-radius: 20px;
+  padding: 48px 44px 36px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--brand-2);
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 22%, transparent);
+  padding: 4px 14px;
+  border-radius: 30px;
+  margin-bottom: 20px;
+}
+
+.title-row {
   display: flex;
-  flex-direction: column;
-  margin: -24px -32px 0 -32px;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 6px;
+}
+.title-row h1 {
+  font-size: 3.2rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+  margin: 0;
+  color: var(--text-primary);
+}
+.title-row h1 strong {
+  font-weight: 600;
+  background: linear-gradient(120deg, #0067C0 0%, #2B88D8 50%, #38BDF8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.title-row .en {
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  letter-spacing: 2px;
 }
 
-.home-hero {
-  position: relative;
-  width: 100%;
-  height: 400px;
-  overflow: hidden;
-  flex-shrink: 0;
+.subhead-wrap { text-align: center; }
+.subhead {
+  display: inline-block;
+  text-align: left;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  font-weight: 300;
+  margin: 4px 0 28px;
+  border-left: 3px solid var(--brand);
+  padding-left: 18px;
 }
 
-.home-hero-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.desc {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  max-width: 720px;
+  margin: 0 auto 8px;
+  line-height: 1.8;
+}
+
+/* ===== 特色卡片 ===== */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 44px;
+}
+.feature-item {
+  background: var(--card-bg-default);
+  border: 1px solid var(--card-stroke);
+  border-radius: 18px;
+  padding: 22px 20px 20px;
+  text-align: left;
+  transition: background .2s, border-color .2s;
+}
+.feature-item:hover {
+  background: var(--subtle-secondary);
+  border-color: color-mix(in srgb, var(--brand) 28%, var(--card-stroke));
+}
+.feature-icon {
+  font-size: 1.8rem;
   display: block;
-  opacity: 0.9;
+  margin-bottom: 8px;
+  color: var(--accent-base);
+}
+.feature-item h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: var(--text-primary);
+}
+.feature-item p {
+  font-size: .9rem;
+  color: var(--text-secondary);
+  font-weight: 300;
+  margin: 0;
 }
 
-.home-hero-mask {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 0%, transparent 75%, var(--app-bg) 100%);
-  pointer-events: none;
+/* ===== 十大篇章 ===== */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 14px;
+  color: var(--text-primary);
 }
+.section-icon { font-size: 1.1rem; color: var(--accent-base); }
 
-.home-hero-text {
-  position: absolute;
-  left: 36px;
-  top: 48px;
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 40px;
+}
+.chapter-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card-bg-default);
+  border: 1px solid var(--card-stroke);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: .9rem;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: .15s;
+  font-family: inherit;
+}
+.chapter-chip:hover {
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 24%, transparent);
+  color: var(--brand);
+}
+.chapter-icon { font-size: 1rem; color: var(--accent-base); }
+
+/* ===== 最近访问 / 我的收藏 ===== */
+.rf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.sidebar-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--card-bg-default);
+  border: 1px solid var(--card-stroke);
+}
+.sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.sidebar-title .icon {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 1;
 }
-
-.home-hero-subtitle {
-  font-size: 18px;
-  color: var(--text-primary);
-}
-
-.home-hero-title {
-  font-size: 40px;
-  font-weight: 600;
-  line-height: 1.1;
-  color: var(--text-primary);
-}
-
-.home-hero-tiles-wrap {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 24px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--ctrl-strong-stroke) 58%, transparent) transparent;
-  z-index: 1;
-}
-
-/* 注释掉 webkit-scrollbar 自定义样式，让 Edge FluentScrollBarStyle 完全接管 */
-/*
-.home-hero-tiles-wrap::-webkit-scrollbar {
-  display: block;
-}
-
-.home-hero-tiles-wrap::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.home-hero-tiles-wrap::-webkit-scrollbar-thumb {
-  background-color: color-mix(in srgb, var(--ctrl-strong-stroke) 58%, transparent);
-  background-clip: content-box;
-  border: 4px solid transparent;
-  border-radius: 8px;
-}
-*/
-
-.home-hero-tiles {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  padding: 0 36px 12px 36px;
-  width: max-content;
-}
-
-  .home-hero-tile {
-    width: 220px;
-    height: 88px;
-    padding: 16px;
-    border-radius: 8px;
-    background: var(--card-bg);
-    backdrop-filter: var(--flyout-backdrop);
-    border: 1px solid var(--card-stroke);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    text-decoration: none;
-    color: inherit;
-    flex-shrink: 0;
-    transition: background var(--fast-duration) var(--fast-out-slow-in);
-  }
-
-.home-hero-tile:hover {
-  background: var(--subtle-secondary);
-}
-
-.home-hero-tile-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  background: var(--subtle-secondary);
+.sidebar-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.home-hero-tile-icon .icon {
-  font-size: 20px;
-  color: var(--text-primary);
-}
-
-.home-hero-tile-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.home-hero-tile-title {
+  gap: 8px;
   font-size: 13px;
-  font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: 4px;
+  transition: background var(--faster-duration);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.home-hero-tile-desc {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.home-selector-bar {
-  display: flex;
-  flex-direction: row;
-  align-self: center;
-  gap: 8px;
-  margin: 24px 0 16px 0;
-  padding: 0;
-  background: transparent;
-  border: 0;
-}
-
-.home-selector-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--ctrl-fill-secondary);
-  border: 1px solid var(--ctrl-border);
-  cursor: pointer;
+.sidebar-item:hover { background: var(--subtle-secondary); }
+.sidebar-dot {
   font-size: 13px;
-  color: var(--text-primary);
-  transition: background var(--fast-duration) var(--fast-out-slow-in), border-color var(--fast-duration) var(--fast-out-slow-in);
-}
-
-.home-selector-item:hover {
-  background: var(--ctrl-fill-tertiary);
-}
-
-.home-selector-item.active {
-  background: var(--accent-base);
-  border-color: var(--accent-border);
-  color: var(--accent-text);
-}
-
-.home-selector-item .icon {
-  font-size: 14px;
-}
-
-.home-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 36px;
-  margin-bottom: 16px;
-}
-
-.home-section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.home-h-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  margin: 0 -36px;
-  padding: 0 36px 12px 36px;
-  scrollbar-width: thin;
-}
-
-.home-card-row {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  width: max-content;
-}
-
-.home-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-}
-
-.home-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-stroke);
-  cursor: pointer;
-  transition: background var(--fast-duration) var(--fast-out-slow-in);
-}
-
-.home-card:hover {
-  background: var(--subtle-secondary);
-}
-
-.home-card-fixed {
-  width: 280px;
+  color: var(--accent-base);
   flex-shrink: 0;
 }
-
-.home-card-icon-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  background: var(--subtle-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.home-card-icon-wrap .icon {
-  font-size: 18px;
-  color: var(--text-primary);
-}
-
-.home-card-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.home-card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.home-card-desc {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.home-favorites-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 48px 24px;
-}
-
-.home-favorites-empty-icon {
-  font-size: 36px;
-  color: var(--text-secondary);
-}
-
-.home-favorites-empty-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.home-favorites-empty-desc {
+.sidebar-empty {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
+  padding: 8px 0;
   text-align: center;
+}
+
+/* ===== 页脚 ===== */
+.footer {
+  margin-top: 44px;
+  padding-top: 24px;
+  border-top: 1px solid var(--card-stroke);
+  font-size: .8rem;
+  color: var(--text-tertiary);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+}
+.footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: .15s;
+}
+.footer a:hover { color: var(--brand); }
+
+/* ===== 浅色主题对比度修正 ===== */
+html.theme-light .intro-page .title-row h1 strong {
+  background: linear-gradient(120deg, #004E9A 0%, #0067C0 55%, #2B88D8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+html.theme-light .intro-page .badge { color: #005A9E; }
+
+/* ===== 响应式 ===== */
+@media (max-width: 640px) {
+  .hero { padding: 32px 20px 28px; border-radius: 16px; }
+  .title-row h1 { font-size: 2.2rem; }
+  .title-row .en { font-size: 1rem; }
+  .subhead { font-size: 1rem; padding-left: 14px; }
+  .desc { font-size: .95rem; }
+  .features { grid-template-columns: 1fr; }
+  .chapter-grid { grid-template-columns: 1fr; }
+  .rf-grid { grid-template-columns: 1fr; }
+  .footer { flex-direction: column; text-align: center; }
 }
 </style>

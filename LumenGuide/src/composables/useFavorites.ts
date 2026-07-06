@@ -1,78 +1,59 @@
 import { ref, computed } from 'vue';
 
-// 持久化收藏列表
-const FAVORITES_STORAGE_KEY = 'winui-favorites';
+const STORAGE_KEY = 'winui-favorites';
 
-// 全局收藏状态
-const favoritesSet = ref<Set<string>>(new Set());
+// 使用数组而非 Set，确保 Vue 响应式系统能追踪到变化
+const favoritesArr = ref<string[]>([]);
 
-// 从localStorage加载收藏
 function loadFavorites() {
   try {
-    const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const arr = JSON.parse(stored) as string[];
-      favoritesSet.value = new Set(arr);
+      favoritesArr.value = JSON.parse(stored);
     }
-  } catch (e) {
-    console.error('Failed to load favorites:', e);
+  } catch {
+    favoritesArr.value = [];
   }
 }
 
-// 保存收藏到localStorage
 function saveFavorites() {
   try {
-    const arr = Array.from(favoritesSet.value);
-    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(arr));
-  } catch (e) {
-    console.error('Failed to save favorites:', e);
-  }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(favoritesArr.value));
+  } catch { /* ignore */ }
 }
 
-// 初始化时加载
+// 初始化加载
 loadFavorites();
 
 export function useFavorites() {
-  // 获取所有收藏的页面键
-  const favorites = computed(() => Array.from(favoritesSet.value));
+  const favorites = computed(() => favoritesArr.value);
 
-  // 检查某个页面是否被收藏
   function isFavorite(pageKey: string): boolean {
-    return favoritesSet.value.has(pageKey);
+    return favoritesArr.value.includes(pageKey);
   }
 
-  // 切换收藏状态
   function toggleFavorite(pageKey: string): boolean {
-    if (favoritesSet.value.has(pageKey)) {
-      favoritesSet.value.delete(pageKey);
+    const idx = favoritesArr.value.indexOf(pageKey);
+    if (idx > -1) {
+      favoritesArr.value = favoritesArr.value.filter(k => k !== pageKey);
     } else {
-      favoritesSet.value.add(pageKey);
+      favoritesArr.value = [...favoritesArr.value, pageKey];
     }
     saveFavorites();
-    return favoritesSet.value.has(pageKey);
+    return !(idx > -1);
   }
 
-  // 添加收藏
   function addFavorite(pageKey: string) {
-    if (!favoritesSet.value.has(pageKey)) {
-      favoritesSet.value.add(pageKey);
+    if (!favoritesArr.value.includes(pageKey)) {
+      favoritesArr.value = [...favoritesArr.value, pageKey];
       saveFavorites();
     }
   }
 
-  // 移除收藏
   function removeFavorite(pageKey: string) {
-    if (favoritesSet.value.has(pageKey)) {
-      favoritesSet.value.delete(pageKey);
-      saveFavorites();
-    }
+    favoritesArr.value = favoritesArr.value.filter(k => k !== pageKey);
+    saveFavorites();
   }
 
-  return {
-    favorites,
-    isFavorite,
-    toggleFavorite,
-    addFavorite,
-    removeFavorite
-  };
+  return { favorites, isFavorite, toggleFavorite, addFavorite, removeFavorite };
 }
