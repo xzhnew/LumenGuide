@@ -18,7 +18,7 @@ export default defineConfig({
                 const manifestPath = path.join(__dirname, 'dist/manifest.json');
                 if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-    manifest.start_url = '/WinUIonWeb/';
+    manifest.start_url = '/LumenGuide/';
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 }
             }

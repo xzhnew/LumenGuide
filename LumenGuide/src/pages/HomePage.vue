@@ -5,7 +5,7 @@
 
       <div class="title-row">
         <h1><strong>全端启萌</strong></h1>
-        <span class="en">FirstLight</span>
+        <span class="en">LumenGuide</span>
       </div>
       <div class="subhead-wrap">
         <div class="subhead">每一台电脑的第一束光</div>
@@ -71,7 +71,7 @@
         · CC BY-NC-SA 4.0
         &nbsp;·&nbsp;
         基于
-        <a :href="WINULONWEB_URL" target="_blank" rel="noopener">WinUlonWeb</a>
+        <a :href="LUMENGUIDE_URL" target="_blank" rel="noopener">全端启萌</a>
         · GPL-3.0
       </span>
     </div>
@@ -118,7 +118,7 @@ const favoritePages = computed(() =>
 );
 
 const COURSE_URL = 'https://www.criwits.top/missing';
-const WINULONWEB_URL = 'https://furry-xiyi.github.io/WinUIonWeb/';
+const LUMENGUIDE_URL = 'https://xzhnew.github.io/LumenGuide/';
 </script>
 
 <style scoped>

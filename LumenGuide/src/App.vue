@@ -31,13 +31,22 @@
       <component :is="pageComponent" :class="pageAnimClass" />
     </div>
   </WinNavigationView>
+
+  <!-- 全局中文右键菜单（WinUI MenuFlyout 风格） -->
+  <WinContextMenu
+    :open="contextMenuOpen"
+    :anchor="contextMenuAnchor"
+    :items="contextMenuItems"
+    @close="closeContextMenu"
+    @select="onContextMenuSelect" />
 </template>
 
 <script setup>
-import { ref, watch, provide, computed } from 'vue';
+import { ref, watch, provide, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import WinTitleBar from './components/WinTitleBar.vue';
 import WinNavigationView from './components/WinNavigationView.vue';
 import WinSearchBox from './components/WinSearchBox.vue';
+import WinContextMenu from './components/WinContextMenu.vue';
 
 import HomePage from './pages/HomePage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
@@ -51,6 +60,7 @@ import Volume7 from './pages/Volume7.vue';
 import Volume8 from './pages/Volume8.vue';
 import Volume9 from './pages/Volume9.vue';
 import { chapterArticles, chapterPlan } from './data/pages';
+import { useContextMenu } from './composables/useContextMenu.js';
 
 // ========== 页面路由表 ==========
 // 每章 key 映射到其所属卷的 Volume 组件；同一卷多章共用一个组件，
@@ -152,11 +162,11 @@ const pageAnimClass = computed(() => {
   return map[animSetting.value] || 'page-transition-up';
 });
 
-// 搜索（对标 AutoSuggestBox.QuerySubmitted）
+// 搜索（WinSearchBox）
 const searchQuery = ref('');
 const onQuerySubmitted = (e) => {
   const item = e.chosenSuggestion;
-  if (item && pageMap[item.key]) {
+  if (item && item.key && pageMap[item.key]) {
     currentPage.value = item.key;
   }
   searchQuery.value = '';
@@ -172,6 +182,36 @@ watch(currentPage, (newPage) => {
     localStorage.setItem('winui-recent-pages', JSON.stringify(list));
   } catch { /* ignore */ }
 });
+
+// ========== 全局中文右键菜单（逻辑抽到 useContextMenu composable） ==========
+const {
+  contextMenuOpen,
+  contextMenuAnchor,
+  contextMenuItems,
+  onContextMenuSelect,
+  closeContextMenu,
+  onGlobalContextMenu,
+} = useContextMenu({
+  currentPage,
+  themeSetting,
+  onToggleTheme: () => {
+    const order = ['system', 'light', 'dark'];
+    themeSetting.value = order[(order.indexOf(themeSetting.value) + 1) % 3];
+  },
+  onRefreshCurrent: () => {
+    const k = currentPage.value;
+    currentPage.value = '__ping__';
+    nextTick(() => { currentPage.value = k; });
+  },
+});
+
+onMounted(() => {
+  document.addEventListener('contextmenu', onGlobalContextMenu, true);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('contextmenu', onGlobalContextMenu, true);
+});
 </script>
 
 <style>
@@ -179,7 +219,7 @@ watch(currentPage, (newPage) => {
 @import './styles/animations.css';
 
 @font-face {
-  font-family: 'WinUIOnWebIcons';
+  font-family: 'LumenGuideIcons';
   src: url('./assets/Fonts/SEGOEICONS.TTF') format('truetype');
   font-display: block;
 }
@@ -187,7 +227,7 @@ watch(currentPage, (newPage) => {
 body .icon,
 body .icon-btn,
 body .ptr-icon-wrapper {
-  font-family: 'WinUIOnWebIcons', 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif;
+  font-family: 'LumenGuideIcons', 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif;
 }
 
 .page-container {
@@ -208,5 +248,14 @@ body .ptr-icon-wrapper {
 .app-top-search .win-search-box {
   width: 240px;
   max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .app-top-search {
+    margin-right: 0;
+  }
+  .app-top-search .win-search-box {
+    width: 100%;
+  }
 }
 </style>

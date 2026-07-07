@@ -10,6 +10,8 @@
  */
 
 import type { PageMeta, PageGroup } from '../data/pages';
+import { articleContent } from '../data/articleContent';
+
 
 // ========== 篇章结构：每卷自行声明包含哪几章（支持单卷单独增删章） ==========
 export interface VolumeDef {
@@ -49,6 +51,7 @@ chapterPlan.forEach((vol, i) => {
       desc: `Chapter ${n} article ${tNum}.`,
       descZh: `《${vol.name}》${chTitle}内容。`,
       keywords: ['chapter', '篇章', '文章', 'article', vol.name, `第${n}卷`, chTitle],
+      content: articleContent[key] || '',
     });
   });
 });

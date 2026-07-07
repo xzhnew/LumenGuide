@@ -15,6 +15,7 @@
         @focus="onFocus"
         @blur="onBlur"
         @keydown="onKeydown"
+        @contextmenu.prevent
       />
       <!-- 清除按钮（有输入时显示） -->
       <button
@@ -116,8 +117,8 @@
                     @mouseenter="setHighlight(flatIndexOf(group, idx))">
                     <div class="win-sug-icon"><span class="icon">{{ item.icon }}</span></div>
                     <div class="win-sug-text">
-                      <div class="win-sug-title">{{ item.title }}</div>
-                      <div class="win-sug-subtitle">{{ item.titleZh }} &middot; {{ item.descZh }}</div>
+                      <div class="win-sug-title">{{ item.titleZh || item.title }}</div>
+                      <div class="win-sug-subtitle">{{ getSnippet(item, query) }}</div>
                     </div>
                     <div class="win-sug-meta">
                       <span class="win-sug-category">{{ group.label || '结果' }}</span>
@@ -151,6 +152,36 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import WinButton from './WinButton.vue';
 import { searchPages, getPageMeta, pageGroups, type PageMeta } from '../data/pages';
 import { useFavorites } from '../composables/useFavorites';
+
+/**
+ * 生成搜索结果的辅助说明：优先展示正文中命中关键词的前后片段。
+ */
+function getSnippet(item: PageMeta, query: string): string {
+  const q = query.trim().toLowerCase();
+  if (!q) return item.descZh;
+
+  // 1. 正文命中：截取匹配处前后文本，并高亮上下文
+  if (item.content) {
+    const lower = item.content.toLowerCase();
+    const idx = lower.indexOf(q);
+    if (idx >= 0) {
+      const start = Math.max(0, idx - 24);
+      const end = Math.min(item.content.length, idx + q.length + 72);
+      let snippet = item.content.slice(start, end).replace(/\s+/g, ' ').trim();
+      if (start > 0) snippet = '…' + snippet;
+      if (end < item.content.length) snippet = snippet + '…';
+      return snippet;
+    }
+  }
+
+  // 2. 描述命中：直接展示中文描述
+  if (item.descZh.includes(q) || item.desc.toLowerCase().includes(q)) {
+    return item.descZh;
+  }
+
+  // 3. 标题 / 关键词命中：返回描述兜底
+  return item.descZh || item.titleZh || '';
+}
 
 /**
  * WinSearchBox —— 对标 WinUI 3 的 Microsoft.UI.Xaml.Controls.AutoSuggestBox
@@ -221,14 +252,15 @@ const popupPos = ref({ top: '0px', left: '0px', width: '400px' });
 const updatePopupPos = () => {
   if (!rootRef.value || !isFocused.value) return;
   const rect = rootRef.value.getBoundingClientRect();
-  // 弹窗宽度与搜索框一致，最小 320px，小屏时撑满可用宽度
-  const popupWidth = Math.max(320, rect.width);
+  // 弹窗宽度与搜索框一致；小屏模式下尽量撑满，桌面端保底 320px
+  const isSmallScreen = window.innerWidth < 640;
+  const popupWidth = isSmallScreen ? rect.width : Math.max(320, rect.width);
 
   if (props.navMode === 'top') {
-    // 顶导航模式：弹窗从搜索框下方展开，左对齐
+    // 顶导航模式：弹窗从搜索框下方展开，左对齐；小屏允许贴到右边缘，避免被 padding 挤偏
     let left = rect.left;
     if (left < 12) left = 12;
-    const maxRight = window.innerWidth - 12;
+    const maxRight = isSmallScreen ? window.innerWidth : window.innerWidth - 12;
     if (left + popupWidth > maxRight) {
       left = maxRight - popupWidth;
     }
@@ -309,6 +341,7 @@ const setHighlight = (i: number) => { highlightIndex.value = i; };
 
 // 最近访问与收藏
 const { favorites } = useFavorites();
+const recentRefresh = ref(0);
 
 const getRecentHistory = (): string[] => {
   try {
@@ -318,6 +351,7 @@ const getRecentHistory = (): string[] => {
 };
 
 const recentItems = computed(() => {
+  recentRefresh.value; // 强制 Vue 追踪此依赖——每次 recentRefresh 变化就重新读 localStorage
   return getRecentHistory()
     .filter(key => key !== 'home')
     .map(key => getPageMeta(key))
@@ -341,7 +375,7 @@ const popupStyle = computed(() => ({
   maxHeight: props.maxSuggestionHeight > 0 ? (props.maxSuggestionHeight + 'px') : undefined
 }));
 
-const onFocus = () => { isFocused.value = true; updatePopupPos(); };
+const onFocus = () => { recentRefresh.value++; isFocused.value = true; updatePopupPos(); };
 
 const onBlur = () => {
   setTimeout(() => { isFocused.value = false; }, 150);
@@ -370,7 +404,7 @@ const onKeydown = (e: KeyboardEvent) => {
 const chooseSuggestion = (item: PageMeta) => {
   emit('suggestionChosen', { selectedItem: item });
   // UpdateTextOnSelect —— 选中后是否把文本写回输入框
-  query.value = props.updateTextOnSelect ? (item.title || '') : '';
+  query.value = props.updateTextOnSelect ? (item.titleZh || item.title || '') : '';
   emit('querySubmitted', { queryText: query.value, chosenSuggestion: item });
   isFocused.value = false;
   inputRef.value?.blur();

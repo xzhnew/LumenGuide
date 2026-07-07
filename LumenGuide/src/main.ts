@@ -2,8 +2,15 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import './styles/theme.css'
 
-createApp(App).mount('#app')
+const app = createApp(App)
 
-document.addEventListener('contextmenu', (e) => {
-  e.preventDefault();
-});
+app.config.errorHandler = (err) => {
+  console.error('[Vue error]', err)
+}
+
+app.config.warnHandler = (msg) => {
+  console.warn('[Vue warn]', msg)
+}
+
+app.mount('#app')
+

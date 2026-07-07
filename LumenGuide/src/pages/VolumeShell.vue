@@ -41,7 +41,21 @@ const scrollToCurrent = () => {
     });
   }
   const el = document.getElementById(pageKey.value);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!el) return;
+
+  const content = document.querySelector('.win-nav-content') as HTMLElement | null;
+  const header = document.querySelector('.win-nav-content-header') as HTMLElement | null;
+  const headerHeight = header ? header.getBoundingClientRect().height : 0;
+
+  // 每卷第 1 章位于页面顶部，直接回到顶部即可保留页面标题；
+  // 其他章滚动到标题下方，预留 sticky 搜索头高度 + 16px 间距。
+  const match = pageKey.value.match(/^ch(\d+)-1$/);
+  if (match) {
+    content?.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    el.style.scrollMarginTop = `${headerHeight + 16}px`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 };
 
 onMounted(async () => {

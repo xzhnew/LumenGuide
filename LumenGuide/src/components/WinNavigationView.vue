@@ -2273,7 +2273,6 @@ watch(() => props.selectedValue, (val, oldVal) => {
   .win-nav-top-search-wrap {
     flex: 1;
     min-width: 0;
-    max-width: 220px;
   }
 
   .win-nav-top-search-wrap .win-search-box {
@@ -2330,8 +2329,6 @@ watch(() => props.selectedValue, (val, oldVal) => {
 .win-nav-shell.is-left-minimal .win-nav-top-search-wrap {
   flex: 1;
   min-width: 0;
-  max-width: 240px;
-  margin-left: auto;
 }
 
 .win-nav-shell.is-left-minimal .win-nav-top-spacer {
@@ -2363,7 +2360,7 @@ watch(() => props.selectedValue, (val, oldVal) => {
   }
 
   .win-nav-shell.is-left-minimal .win-nav-top-search-wrap {
-    max-width: 200px;
+    max-width: none;
   }
 
   .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel {

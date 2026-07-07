@@ -1,211 +1,246 @@
 <template>
   <div
-    class="win-tb"
-    :class="{ 'is-readonly': isReadOnly, 'is-disabled': disabled }"
+    class="win-textbox"
+    :class="{
+      'is-readonly': IsReadOnly,
+      'is-disabled': isDisabled,
+      'is-focused': isFocused,
+      'is-hovered': isHovered
+    }"
     :style="rootStyle">
-    <!-- Header（对标 TextBox.Header，object 内容；这里支持 string + #header slot） -->
-    <div v-if="header || $slots.header" class="win-tb-header">
-      <slot name="header">{{ header }}</slot>
+    <div v-if="Header || $slots.header" class="win-textbox-header">
+      <slot name="header">{{ Header }}</slot>
     </div>
 
-    <!-- 边框（对标 TextBox 控件模板中的 Border + ContentElement） -->
-    <div
-      class="win-tb-border"
-      :class="{ focused: isFocused, 'has-clear': showClearButton }">
-      <div class="win-tb-content">
-        <!-- Prefixes（对标 TextBox.Prefixes 集合，web 用 #prefix slot 承载） -->
-        <span v-if="$slots.prefix" class="win-tb-prefix"><slot name="prefix" /></span>
-
-        <!-- 单行：input；多行(AcceptsReturn)：textarea —— 与官方 TextBox 同一定位 -->
-        <input
-          v-if="!acceptsReturn"
+    <div class="win-textbox-border">
+      <div class="win-textbox-content">
+        <textarea
+          v-if="AcceptsReturn"
           ref="fieldRef"
-          class="win-tb-field"
-          type="text"
-          :value="text"
-          :readonly="isReadOnly"
-          :disabled="disabled"
-          :maxlength="maxLength > 0 ? maxLength : undefined"
-          :spellcheck="isSpellCheckEnabled"
+          class="win-textbox-field win-textbox-textarea"
+          :value="currentText"
+          :placeholder="PlaceholderText"
+          :readonly="IsReadOnly"
+          :disabled="isDisabled"
+          :maxlength="MaxLength > 0 ? MaxLength : undefined"
+          :spellcheck="IsSpellCheckEnabled"
           :inputmode="inputMode"
+          :autocomplete="IsTextPredictionEnabled ? 'on' : 'off'"
           :autocapitalize="textPredictionAttr"
           :autocorrect="textPredictionAttr"
-          :autocomplete="isTextPredictionEnabled ? 'on' : 'off'"
+          :style="fieldStyle"
           @input="onInput"
           @focus="onFocus"
           @blur="onBlur"
           @keydown="onKeydown"
           @paste="onPaste"
+          @contextmenu="onContextMenu"
           @select="onSelect"
-          @cut="onCut"
-          @copy="onCopy"
-        />
-        <textarea
+          @cut="onCuttingToClipboard"
+          @copy="onCopyingToClipboard"
+          @compositionstart="emit('TextCompositionStarted')"
+          @compositionupdate="emit('TextCompositionChanged')"
+          @compositionend="emit('TextCompositionEnded')"
+          @pointerenter="onPointerEnter"
+          @pointerleave="onPointerLeave" />
+
+        <input
           v-else
           ref="fieldRef"
-          class="win-tb-field win-tb-textarea"
-          :value="text"
-          :readonly="isReadOnly"
-          :disabled="disabled"
-          :maxlength="maxLength > 0 ? maxLength : undefined"
-          :spellcheck="isSpellCheckEnabled"
+          class="win-textbox-field"
+          type="text"
+          :value="currentText"
+          :placeholder="PlaceholderText"
+          :readonly="IsReadOnly"
+          :disabled="isDisabled"
+          :maxlength="MaxLength > 0 ? MaxLength : undefined"
+          :spellcheck="IsSpellCheckEnabled"
           :inputmode="inputMode"
+          :autocomplete="IsTextPredictionEnabled ? 'on' : 'off'"
           :autocapitalize="textPredictionAttr"
           :autocorrect="textPredictionAttr"
-          :autocomplete="isTextPredictionEnabled ? 'on' : 'off'"
-          :style="textareaStyle"
+          :style="fieldStyle"
           @input="onInput"
           @focus="onFocus"
           @blur="onBlur"
           @keydown="onKeydown"
           @paste="onPaste"
+          @contextmenu="onContextMenu"
           @select="onSelect"
-          @cut="onCut"
-          @copy="onCopy"
-        ></textarea>
+          @cut="onCuttingToClipboard"
+          @copy="onCopyingToClipboard"
+          @compositionstart="emit('TextCompositionStarted')"
+          @compositionupdate="emit('TextCompositionChanged')"
+          @compositionend="emit('TextCompositionEnded')"
+          @pointerenter="onPointerEnter"
+          @pointerleave="onPointerLeave" />
 
-        <!-- Suffixes（对标 TextBox.Suffixes 集合，web 用 #suffix slot 承载） -->
-        <span v-if="$slots.suffix" class="win-tb-suffix"><slot name="suffix" /></span>
-
-        <!-- 清除按钮（对标 WinUI 3 TextBox.ClearButtonVisible 的 ClearButton） -->
         <button
-          v-if="showClearButton"
-          class="win-tb-clear"
+          v-if="showDeleteButton"
+          class="win-textbox-delete-button"
           type="button"
-          aria-label="清除"
-          @mousedown.prevent="clearText">
-          <span class="icon">&#xE711;</span>
+          aria-label="Clear text"
+          @pointerdown.prevent
+          @click="clearText">
+          <span class="win-textbox-delete-button-layout">
+            <span class="win-textbox-delete-glyph">&#xE894;</span>
+          </span>
         </button>
+
+        <slot name="actions"></slot>
       </div>
-
-      <!-- PlaceholderText（对标 TextBox 模板内 PlaceholderTextContentPresenter，无文本时显示） -->
-      <span
-        v-if="!hasText && placeholderText"
-        class="win-tb-placeholder"
-        :class="{ 'is-multiline': acceptsReturn }"
-        aria-hidden="true">{{ placeholderText }}</span>
     </div>
 
-    <!-- Description（对标 TextBox.Description，object 内容；支持 string + #description slot） -->
-    <div v-if="description || $slots.description" class="win-tb-description">
-      <slot name="description">{{ description }}</slot>
+    <div v-if="Description || $slots.description" class="win-textbox-description">
+      <slot name="description">{{ Description }}</slot>
     </div>
+
+    <WinMenuFlyout
+      :open="contextMenuOpen"
+      :anchorRect="contextMenuAnchor"
+      :items="contextMenuItems"
+      alignment="right"
+      @close="closeContextMenu"
+      @select="onContextMenuSelect" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import type { CSSProperties } from 'vue';
+import WinMenuFlyout from './WinMenuFlyout.vue';
 
-/**
- * WinTextBox —— 对标 WinUI 3 的 Microsoft.UI.Xaml.Controls.TextBox
- *
- * 官方字段名映射（props，命名与官方 1:1 对应）：
- *   Text                              -> prop `text`                 (v-model / v-model:text)
- *   PlaceholderText                   -> prop `placeholderText`
- *   Header                            -> prop `header` / #header slot        (官方为 object 内容)
- *   Description                       -> prop `description` / #description slot (官方为 object 内容)
- *   AcceptsReturn                     -> prop `acceptsReturn`
- *   IsReadOnly                        -> prop `isReadOnly`
- *   IsEnabled                         -> prop `disabled`             (控件 IsEnabled 的 web 等价)
- *   MaxLength                         -> prop `maxLength`            (0 = 不限制，对标官方)
- *   TextWrapping                      -> prop `textWrapping`         ('NoWrap'|'Wrap'|'WrapWholeWords')
- *   TextAlignment                     -> prop `textAlignment`        ('Left'|'Center'|'Right'|'Justify')
- *   HorizontalTextAlignment           -> prop `horizontalTextAlignment`
- *   IsSpellCheckEnabled               -> prop `isSpellCheckEnabled`
- *   IsTextPredictionEnabled           -> prop `isTextPredictionEnabled`
- *   InputScope                        -> prop `inputScope`           (映射为 inputmode/type)
- *   ClearButtonVisible                -> prop `clearButtonVisible`   (WinUI 3 独有属性)
- *   CharacterCasing                   -> prop `characterCasing`      ('Normal'|'Lower'|'Upper')
- *   SelectionHighlightColor           -> prop `selectionHighlightColor` (CSS 颜色，对标 Brush)
- *   DesiredCandidateWindowAlignment    -> prop `desiredCandidateWindowAlignment` (web 无等价，保留字段)
- *   IsHandwritingViewEnabled          -> prop `isHandwritingViewEnabled`      (web 无等价，保留字段)
- *   IsColorFontEnabled                -> prop `isColorFontEnabled`            (web 无等价，保留字段)
- *   PreventKeyboardDisplayOnProgrammaticFocus -> prop `preventKeyboardDisplayOnProgrammaticFocus`
- *   UndoLimit                         -> prop `undoLimit`           (-1 = 不限制)
- *   Prefixes / Suffixes 集合          -> #prefix / #suffix slot      (官方为 UIElement 集合)
- *   HeaderTemplate / DescriptionTemplate -> 由 #header / #description slot 充当（DataTemplate 等价）
- *
- * 官方事件映射（emits）：
- *   TextChanged          -> emit `textChanged`            ({ reason, text })
- *   TextChanging          -> emit `textChanging`          ({ cancel, isContentChanging, checkedLength, text })  // cancel 可被消费者置 true 以阻止
- *   SelectionChanged      -> emit `selectionChanged`      ({ selectionStart, selectionLength, selectedText })
- *   Paste                 -> emit `paste`                 ({ handled, format, text })   // handled 可被置 true 以接管
- *   Cut                  -> emit `cut`                   ({ text })
- *   Copy                 -> emit `copy`                  ({ text })
- *   CandidateWindowBoundsChanged -> emit `candidateWindowBoundsChanged` ({ rect })
- *
- * 官方方法映射（通过 ref 暴露，defineExpose）：
- *   SelectAll()          -> `selectAll()`
- *   Select(start,length) -> `select(start, length)`
- *   GetRectFromCharacterIndex(i, trailing) -> `getRectFromCharacterIndex(index, trailingEdge?)`
- *   Focus(FocusState)    -> `focus()`
- *   Undo() / Redo()      -> `undo()` / `redo()`
- *   Copy() / Cut() / Paste() -> `copy()` / `cut()` / `pasteFromClipboard()`
- *   CanUndo / CanRedo    -> 只读计算属性（ref 形式暴露）
- *   SelectedText / SelectionStart / SelectionLength -> 可读写（ref 形式暴露）
- */
+type TextAlignment = 'Left' | 'Center' | 'Right' | 'Justify';
+type TextWrapping = 'NoWrap' | 'Wrap' | 'WrapWholeWords';
+type CharacterCasing = 'Normal' | 'Lower' | 'Upper';
+type TextBoxMenuCommand = 'cut' | 'copy' | 'paste' | 'undo' | 'redo' | 'selectAll';
+type TextBoxMenuItem = {
+  Text?: string;
+  Icon?: string;
+  Value?: TextBoxMenuCommand;
+};
 
-const props = defineProps({
-  text: { type: String, default: '' },
-  placeholderText: { type: String, default: '' },
-  header: { type: String, default: '' },
-  description: { type: String, default: '' },
-  acceptsReturn: { type: Boolean, default: false },
-  isReadOnly: { type: Boolean, default: false },
-  disabled: { type: Boolean, default: false },
-  maxLength: { type: Number, default: 0 },
-  textWrapping: { type: String, default: 'NoWrap' }, // 'NoWrap' | 'Wrap' | 'WrapWholeWords'
-  textAlignment: { type: String, default: 'Left' }, // 'Left' | 'Center' | 'Right' | 'Justify'
-  horizontalTextAlignment: { type: String, default: '' }, // '' | 'Left' | 'Center' | 'Right' | 'Justify'
-  isSpellCheckEnabled: { type: Boolean, default: true },
-  isTextPredictionEnabled: { type: Boolean, default: true },
-  inputScope: { type: String, default: 'Default' },
-  clearButtonVisible: { type: Boolean, default: true },
-  characterCasing: { type: String, default: 'Normal' }, // 'Normal' | 'Lower' | 'Upper'
-  selectionHighlightColor: { type: String, default: '' }, // CSS 颜色
-  desiredCandidateWindowAlignment: { type: String, default: 'Default' },
-  isHandwritingViewEnabled: { type: Boolean, default: true },
-  isColorFontEnabled: { type: Boolean, default: true },
-  preventKeyboardDisplayOnProgrammaticFocus: { type: Boolean, default: false },
-  undoLimit: { type: Number, default: -1 } // -1 = 不限制
+const props = withDefaults(defineProps<{
+  Text?: string;
+  PlaceholderText?: string;
+  Header?: string;
+  Description?: string;
+  AcceptsReturn?: boolean;
+  IsReadOnly?: boolean;
+  IsEnabled?: boolean;
+  MaxLength?: number;
+  TextWrapping?: TextWrapping;
+  TextAlignment?: TextAlignment;
+  IsSpellCheckEnabled?: boolean;
+  IsTextPredictionEnabled?: boolean;
+  InputScope?: string;
+  CharacterCasing?: CharacterCasing;
+  SelectionHighlightColor?: string;
+  DesiredCandidateWindowAlignment?: string;
+  IsColorFontEnabled?: boolean;
+  PreventKeyboardDisplayOnProgrammaticFocus?: boolean;
+
+  FontFamily?: string;
+  FontSize?: number | string;
+  FontStyle?: string;
+  FontWeight?: number | string;
+  Foreground?: string;
+  CharacterSpacing?: number;
+  MinWidth?: number | string;
+  MaxWidth?: number | string;
+  MinHeight?: number | string;
+  MaxHeight?: number | string;
+}>(), {
+  PlaceholderText: '',
+  Header: '',
+  Description: '',
+  AcceptsReturn: false,
+  IsReadOnly: false,
+  IsEnabled: true,
+  MaxLength: 0,
+  TextWrapping: 'NoWrap',
+  TextAlignment: 'Left',
+  IsSpellCheckEnabled: true,
+  IsTextPredictionEnabled: true,
+  InputScope: 'Default',
+  CharacterCasing: 'Normal',
+  SelectionHighlightColor: '',
+  DesiredCandidateWindowAlignment: 'Default',
+  IsColorFontEnabled: true,
+  PreventKeyboardDisplayOnProgrammaticFocus: false,
+  FontFamily: '',
+  FontSize: '',
+  FontStyle: 'Normal',
+  FontWeight: '',
+  Foreground: '',
+  CharacterSpacing: 0,
+  MinWidth: '',
+  MaxWidth: '',
+  MinHeight: '',
+  MaxHeight: ''
 });
 
-const emit = defineEmits([
-  'update:text',
-  'textChanged',
-  'textChanging',
-  'selectionChanged',
-  'paste',
-  'cut',
-  'copy',
-  'candidateWindowBoundsChanged'
-]);
+const emit = defineEmits<{
+  'update:Text': [value: string];
+  TextChanging: [args: { cancel: boolean; isContentChanging: boolean; checkedLength: number; text: string }];
+  TextChanged: [args: { reason: 'UserInput' | 'ProgrammaticChange'; text: string }];
+  SelectionChanged: [args: { selectionStart: number; selectionLength: number; selectedText: string }];
+  GotFocus: [];
+  LostFocus: [];
+  Paste: [args: { handled: boolean; format: 'Text'; text: string }];
+  CuttingToClipboard: [args: { cancel: boolean; text: string }];
+  CopyingToClipboard: [args: { cancel: boolean; text: string }];
+  CandidateWindowBoundsChanged: [args: { rect: DOMRect | { x: number; y: number; width: number; height: number } }];
+  TextCompositionStarted: [];
+  TextCompositionChanged: [];
+  TextCompositionEnded: [];
+}>();
 
 const fieldRef = ref<HTMLInputElement | HTMLTextAreaElement | null>(null);
 const isFocused = ref(false);
+const isHovered = ref(false);
+const localText = ref(props.Text ?? '');
+const undoStack = ref<string[]>([]);
+const redoStack = ref<string[]>([]);
+const clipboardText = ref('');
+const contextMenuOpen = ref(false);
+const contextMenuAnchor = ref<DOMRect | {
+  x: number;
+  y: number;
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+} | null>(null);
+const contextSelection = ref({ start: 0, length: 0, text: '' });
 
-// Text（对标 TextBox.Text）—— 单向绑定+emit，支持 v-model
-const hasText = computed(() => (props.text ?? '').length > 0);
-
-const showClearButton = computed(() =>
-  props.clearButtonVisible && hasText.value && !props.isReadOnly && !props.disabled
+const isTextControlled = computed(() => props.Text !== undefined);
+const currentText = computed(() => isTextControlled.value ? props.Text ?? '' : localText.value);
+const isDisabled = computed(() => !props.IsEnabled);
+const hasText = computed(() => currentText.value.length > 0);
+const showDeleteButton = computed(() =>
+  hasText.value && !props.AcceptsReturn && !props.IsReadOnly && props.IsEnabled && isFocused.value
 );
 
-// InputScope -> inputmode（web 触摸键盘等价）
 const inputMode = computed(() => {
-  switch (props.inputScope) {
+  switch (props.InputScope) {
     case 'Number':
     case 'NumericPin':
     case 'Digits':
       return 'numeric';
     case 'TelephoneNumber':
       return 'tel';
+    case 'EmailNameOrAddress':
     case 'EmailSmtpAddress':
       return 'email';
     case 'Url':
       return 'url';
     case 'Search':
       return 'search';
+    case 'CurrencyAmount':
+    case 'CurrencyAmountAndSymbol':
     case 'Decimal':
       return 'decimal';
     default:
@@ -213,171 +248,275 @@ const inputMode = computed(() => {
   }
 });
 
-// IsTextPredictionEnabled -> autocapitalize/autocorrect（web 近似等价）
-const textPredictionAttr = computed(() => (props.isTextPredictionEnabled ? 'on' : 'off'));
+const textPredictionAttr = computed(() => (props.IsTextPredictionEnabled ? 'on' : 'off'));
 
-// 文本对齐：HorizontalTextAlignment 优先于 TextAlignment（官方语义一致）
-const resolvedTextAlign = computed(() =>
-  (props.horizontalTextAlignment || props.textAlignment || 'Left').toLowerCase()
-);
-
-// textarea 的折行：TextWrapping=Wrap/NoWrap；WrapWholeWords 在 web 等价于 wrap
-const textareaStyle = computed(() => ({
-  textAlign: resolvedTextAlign.value as any,
-  whiteSpace: props.textWrapping === 'NoWrap' ? 'pre' : 'pre-wrap',
-  overflowWrap: (props.textWrapping === 'WrapWholeWords' ? 'break-word' : 'normal') as
-    | 'break-word'
-    | 'normal'
-}));
-
-const rootStyle = computed(() => {
-  const s: Record<string, string> = {};
-  if (props.selectionHighlightColor) s['--tb-sel'] = props.selectionHighlightColor;
-  return s;
+const resolvedTextAlign = computed(() => {
+  return (props.TextAlignment || 'Left').toLowerCase();
 });
 
-// ===== 撤销/重做缓冲（对标 TextBox.Undo/Redo + UndoLimit） =====
-const undoStack = ref<string[]>([]);
-const redoStack = ref<string[]>([]);
-const canUndo = ref(false);
-const canRedo = ref(false);
+const cssSize = (value: number | string | undefined) => {
+  if (value === undefined || value === '') return undefined;
+  return typeof value === 'number' ? `${value}px` : value;
+};
 
-const pushUndo = (prev: string) => {
-  if (undoStack.value.length && undoStack.value[undoStack.value.length - 1] === prev) return;
-  if (props.undoLimit >= 0 && undoStack.value.length >= props.undoLimit) {
-    undoStack.value.shift();
+const rootStyle = computed<CSSProperties & Record<string, string | number | undefined>>(() => {
+  const style: CSSProperties & Record<string, string | number | undefined> = {};
+  if (props.SelectionHighlightColor) {
+    style['--textbox-selection-background'] = props.SelectionHighlightColor;
   }
-  undoStack.value.push(prev);
+  if (props.MinWidth !== '') style.minWidth = cssSize(props.MinWidth);
+  if (props.MaxWidth !== '') style.maxWidth = cssSize(props.MaxWidth);
+  if (props.MinHeight !== '') style.minHeight = cssSize(props.MinHeight);
+  if (props.MaxHeight !== '') style.maxHeight = cssSize(props.MaxHeight);
+  return style;
+});
+
+const fieldStyle = computed<CSSProperties>(() => {
+  const style: CSSProperties = {
+    textAlign: resolvedTextAlign.value as CSSProperties['textAlign']
+  };
+
+  if (props.FontFamily) style.fontFamily = props.FontFamily;
+  if (props.FontSize !== '') style.fontSize = cssSize(props.FontSize);
+  if (props.FontStyle && props.FontStyle !== 'Normal') style.fontStyle = props.FontStyle.toLowerCase();
+  if (props.FontWeight !== '') style.fontWeight = props.FontWeight;
+  if (props.Foreground) style.color = props.Foreground;
+  if (props.CharacterSpacing) style.letterSpacing = `${props.CharacterSpacing / 1000}em`;
+
+  if (props.AcceptsReturn) {
+    style.whiteSpace = props.TextWrapping === 'NoWrap' ? 'pre' : 'pre-wrap';
+    style.overflowWrap = props.TextWrapping === 'WrapWholeWords' ? 'normal' : 'break-word';
+  }
+
+  return style;
+});
+
+const canUndo = computed(() => undoStack.value.length > 0);
+const canRedo = computed(() => redoStack.value.length > 0);
+
+const contextMenuItems = computed<TextBoxMenuItem[]>(() => {
+  const items: TextBoxMenuItem[] = [];
+  const hasSelection = contextSelection.value.length > 0;
+  const hasText = currentText.value.length > 0;
+  const canEdit = !props.IsReadOnly && props.IsEnabled;
+  const canPaste = canEdit && clipboardText.value.length > 0;
+
+  if (hasSelection) {
+    if (canEdit) items.push({ Text: 'Cut', Icon: '\uE8C6', Value: 'cut' });
+    items.push({ Text: 'Copy', Icon: '\uE8C8', Value: 'copy' });
+  }
+
+  if (canPaste) {
+    items.push({ Text: 'Paste', Icon: '\uE77F', Value: 'paste' });
+  }
+
+  if (canUndo.value) {
+    items.push({ Text: 'Undo', Icon: '\uE7A7', Value: 'undo' });
+  }
+
+  if (canRedo.value) {
+    items.push({ Text: 'Redo', Icon: '\uE7A6', Value: 'redo' });
+  }
+
+  if (hasText) {
+    items.push({ Text: 'Select all', Icon: '\uE8B3', Value: 'selectAll' });
+  }
+
+  return items;
+});
+
+const pushUndo = (previousText: string) => {
+  if (undoStack.value.at(-1) === previousText) return;
+  undoStack.value.push(previousText);
   redoStack.value = [];
-  syncUndoRedoFlags();
 };
 
-const syncUndoRedoFlags = () => {
-  canUndo.value = undoStack.value.length > 0;
-  canRedo.value = redoStack.value.length > 0;
+const emitTextValue = (value: string, reason: 'UserInput' | 'ProgrammaticChange', options: { undo?: boolean } = {}) => {
+  const previous = currentText.value;
+  if (options.undo) pushUndo(previous);
+
+  if (!isTextControlled.value) {
+    localText.value = value;
+  }
+  emit('update:Text', value);
+  emit('TextChanged', { reason, text: value });
 };
 
-const setTextValue = (val: string, opts: { undo?: boolean } = {}) => {
-  if (opts.undo) pushUndo(props.text);
-  emit('update:text', val);
+const resizeTextarea = () => {
+  const element = fieldRef.value;
+  if (!element || !props.AcceptsReturn || !(element instanceof HTMLTextAreaElement)) return;
+  element.style.height = 'auto';
+  element.style.height = `${element.scrollHeight}px`;
 };
 
-// ===== 输入处理 =====
-const onInput = (e: Event) => {
-  const el = e.target as HTMLInputElement | HTMLTextAreaElement;
-  let raw = el.value;
+watch(() => props.Text, () => {
+  localText.value = props.Text ?? '';
+  void nextTick(resizeTextarea);
+}, { immediate: true });
 
-  // CharacterCasing（对标 TextBox.CharacterCasing，会改变实际存储文本）
-  if (props.characterCasing === 'Upper') raw = raw.toUpperCase();
-  else if (props.characterCasing === 'Lower') raw = raw.toLowerCase();
+const normalizeInput = (value: string) => {
+  let nextValue = value;
+  if (props.CharacterCasing === 'Upper') nextValue = nextValue.toUpperCase();
+  if (props.CharacterCasing === 'Lower') nextValue = nextValue.toLowerCase();
+  if (props.MaxLength > 0 && nextValue.length > props.MaxLength) {
+    nextValue = nextValue.slice(0, props.MaxLength);
+  }
+  return nextValue;
+};
 
-  // TextChanging（对标 TextBox.TextChanging，可被取消）
+const onInput = (event: Event) => {
+  const element = event.target as HTMLInputElement | HTMLTextAreaElement;
+  const nextValue = normalizeInput(element.value);
   const changingArgs = {
     cancel: false,
-    isContentChanging: raw !== props.text,
-    checkedLength: raw.length,
-    text: raw
+    isContentChanging: nextValue !== currentText.value,
+    checkedLength: nextValue.length,
+    text: nextValue
   };
-  emit('textChanging', changingArgs);
+
+  emit('TextChanging', changingArgs);
   if (changingArgs.cancel) {
-    // 还原到之前的值
-    el.value = props.text;
+    element.value = currentText.value;
     return;
   }
 
-  // 若大小写转换导致与 DOM 不一致，回写
-  if (raw !== el.value) el.value = raw;
+  if (element.value !== nextValue) {
+    element.value = nextValue;
+  }
 
-  setTextValue(raw, { undo: true });
-
-  // TextChanged（对标 TextBox.TextChanged）
-  emit('textChanged', { reason: 'UserInput', text: raw });
+  emitTextValue(nextValue, 'UserInput', { undo: true });
+  resizeTextarea();
 };
 
 const onFocus = () => {
   isFocused.value = true;
+  emit('GotFocus');
+  resizeTextarea();
 };
 
 const onBlur = () => {
   isFocused.value = false;
+  emit('LostFocus');
 };
 
-const onKeydown = (e: KeyboardEvent) => {
-  // 单行 TextBox：Enter 默认不插入换行（与官方一致）
-  if (e.key === 'Enter' && !props.acceptsReturn) {
-    e.preventDefault();
+const onPointerEnter = () => {
+  isHovered.value = true;
+};
+
+const onPointerLeave = () => {
+  isHovered.value = false;
+};
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && !props.AcceptsReturn) {
+    event.preventDefault();
   }
 };
 
-// 选中文本变化 -> SelectionChanged（对标 TextBox.SelectionChanged）
+const readSelection = () => {
+  const element = fieldRef.value;
+  if (!element) return { start: 0, length: 0, text: '' };
+  const start = element.selectionStart ?? 0;
+  const end = element.selectionEnd ?? 0;
+  const normalizedStart = Math.min(start, end);
+  const normalizedEnd = Math.max(start, end);
+  return {
+    start: normalizedStart,
+    length: normalizedEnd - normalizedStart,
+    text: element.value.substring(normalizedStart, normalizedEnd)
+  };
+};
+
 const onSelect = () => {
-  const sel = readSelection();
-  emit('selectionChanged', {
-    selectionStart: sel.start,
-    selectionLength: sel.length,
-    selectedText: sel.text
+  const selection = readSelection();
+  emit('SelectionChanged', {
+    selectionStart: selection.start,
+    selectionLength: selection.length,
+    selectedText: selection.text
   });
 };
 
-const onCut = (e: ClipboardEvent) => {
-  const sel = readSelection();
-  emit('cut', { text: sel.text });
-  // 不阻止默认，浏览器会执行剪切并触发 input
+const onCuttingToClipboard = (event: ClipboardEvent) => {
+  const args = { cancel: false, text: readSelection().text };
+  emit('CuttingToClipboard', args);
+  if (args.cancel) event.preventDefault();
 };
 
-const onCopy = (e: ClipboardEvent) => {
-  const sel = readSelection();
-  emit('copy', { text: sel.text });
+const onCopyingToClipboard = (event: ClipboardEvent) => {
+  const args = { cancel: false, text: readSelection().text };
+  emit('CopyingToClipboard', args);
+  if (args.cancel) event.preventDefault();
 };
 
-// Paste（对标 TextBox.Paste，TextControlPasteEventArgs.Handled 可被置 true 以接管）
-const onPaste = (e: ClipboardEvent) => {
-  const text = e.clipboardData?.getData('text') ?? '';
-  const args = { handled: false, format: 'Text', text };
-  emit('paste', args);
-  if (args.handled) {
-    e.preventDefault();
+const onPaste = (event: ClipboardEvent) => {
+  const text = event.clipboardData?.getData('text') ?? '';
+  const args = { handled: false, format: 'Text' as const, text };
+  emit('Paste', args);
+  if (args.handled) event.preventDefault();
+};
+
+const readClipboardText = async () => {
+  try {
+    return await navigator.clipboard?.readText() ?? '';
+  } catch {
+    return '';
   }
 };
 
-// ===== 选中信息读取（SelectionStart / SelectionLength / SelectedText 对标） =====
-const readSelection = () => {
-  const el = fieldRef.value;
-  if (!el) return { start: 0, length: 0, text: '' };
-  const start = el.selectionStart ?? 0;
-  const end = el.selectionEnd ?? 0;
-  const length = Math.abs(end - start);
-  const text = (el.value ?? '').substring(Math.min(start, end), Math.max(start, end));
-  return { start: Math.min(start, end), length, text };
+const onContextMenu = async (event: MouseEvent) => {
+  event.preventDefault();
+  if (isDisabled.value) return;
+
+  contextMenuOpen.value = false;
+  contextSelection.value = readSelection();
+  clipboardText.value = await readClipboardText();
+
+  if (!contextMenuItems.value.length) return;
+
+  const x = event.clientX;
+  const y = event.clientY;
+  contextMenuAnchor.value = {
+    x,
+    y,
+    top: y,
+    bottom: y,
+    left: x,
+    right: x,
+    width: 0,
+    height: 0
+  };
+  contextMenuOpen.value = true;
 };
 
-// SelectedText（可读写，对标 TextBox.SelectedText）
-const selectedText = computed({
-  get: () => readSelection().text,
-  set: (v: string) => {
-    const el = fieldRef.value as HTMLInputElement | HTMLTextAreaElement | null;
-    if (!el) return;
-    const { start, length } = readSelection();
-    const cur = el.value ?? '';
-    const next = cur.slice(0, start) + v + cur.slice(start + length);
-    el.value = next;
-    setTextValue(next, { undo: true });
-    emit('textChanged', { reason: 'ProgrammaticChange', text: next });
-  }
-});
+const clearText = () => {
+  emitTextValue('', 'ProgrammaticChange', { undo: true });
+  requestAnimationFrame(() => {
+    fieldRef.value?.focus();
+    resizeTextarea();
+  });
+};
 
-// SelectionStart / SelectionLength（只读，对标 TextBox.SelectionStart / SelectionLength）
-const selectionStart = computed(() => readSelection().start);
-const selectionLength = computed(() => readSelection().length);
+const closeContextMenu = () => {
+  contextMenuOpen.value = false;
+};
 
-// ===== 方法（defineExpose） =====
-const focus = (opts: { preventScroll?: boolean } = {}) => {
-  if (props.preventKeyboardDisplayOnProgrammaticFocus) {
-    // web 无法完全阻止软键盘，但可避免滚动
-    fieldRef.value?.focus({ preventScroll: opts.preventScroll });
-  } else {
-    fieldRef.value?.focus({ preventScroll: opts.preventScroll });
-  }
+const onContextMenuSelect = (item: TextBoxMenuItem) => {
+  if (!item.Value) return;
+  const command = item.Value;
+  closeContextMenu();
+
+  if (command === 'cut') cutContextSelectionToClipboard();
+  if (command === 'copy') copyContextSelectionToClipboard();
+  if (command === 'paste') void pasteFromClipboard();
+  if (command === 'undo') undo();
+  if (command === 'redo') redo();
+  if (command === 'selectAll') selectAll();
+};
+
+const focus = (options: FocusOptions = {}) => {
+  fieldRef.value?.focus({
+    preventScroll: props.PreventKeyboardDisplayOnProgrammaticFocus || options.preventScroll
+  });
 };
 
 const selectAll = () => {
@@ -386,111 +525,124 @@ const selectAll = () => {
 };
 
 const select = (start: number, length: number) => {
-  const el = fieldRef.value as HTMLInputElement | HTMLTextAreaElement | null;
-  if (!el) return;
-  const end = Math.min(start + length, el.value.length);
-  el.setSelectionRange(start, end);
+  const element = fieldRef.value;
+  if (!element) return;
+  const selectionStart = Math.max(0, Math.min(start, element.value.length));
+  const selectionEnd = Math.max(selectionStart, Math.min(selectionStart + length, element.value.length));
+  element.setSelectionRange(selectionStart, selectionEnd);
   onSelect();
 };
 
 const getRectFromCharacterIndex = (index: number, trailingEdge = false) => {
-  const el = fieldRef.value as HTMLInputElement | HTMLTextAreaElement | null;
-  if (!el) return { x: 0, y: 0, width: 0, height: 0 };
-  const rect = el.getBoundingClientRect();
-  const value = el.value ?? '';
-  const idx = Math.max(0, Math.min(index, value.length));
-
-  // 单行：用 canvas 测量到 idx 的文本宽度；多行：仅做水平近似（web 限制，已注明）
-  let textWidth = 0;
-  if (typeof document !== 'undefined') {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const cs = getComputedStyle(el);
-      ctx.font = `${cs.fontSize} ${cs.fontFamily}`;
-      textWidth = ctx.measureText(value.substring(0, idx)).width;
-    }
+  const element = fieldRef.value;
+  if (!element || typeof document === 'undefined') {
+    return { x: 0, y: 0, width: 0, height: 0 };
   }
-  const paddingLeft = parseFloat(getComputedStyle(el).paddingLeft) || 0;
-  const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 18;
-  const x = rect.left + paddingLeft + textWidth + (trailingEdge ? 1 : 0);
-  const y = rect.top + (parseFloat(getComputedStyle(el).paddingTop) || 0);
-  return { x, y, width: 1, height: lineHeight };
+
+  const rect = element.getBoundingClientRect();
+  const computedStyle = getComputedStyle(element);
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  const normalizedIndex = Math.max(0, Math.min(index, element.value.length));
+  let textWidth = 0;
+
+  if (context) {
+    context.font = `${computedStyle.fontStyle} ${computedStyle.fontWeight} ${computedStyle.fontSize} ${computedStyle.fontFamily}`;
+    textWidth = context.measureText(element.value.slice(0, normalizedIndex)).width;
+  }
+
+  const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+  const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
+  const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+
+  return {
+    x: rect.left + paddingLeft + textWidth + (trailingEdge ? 1 : 0),
+    y: rect.top + paddingTop,
+    width: 1,
+    height: lineHeight
+  };
 };
 
-const clearText = () => {
-  setTextValue('', { undo: true });
-  emit('textChanged', { reason: 'ProgrammaticChange', text: '' });
-  nextTick(() => fieldRef.value?.focus());
+const replaceSelectedText = (replacement: string) => {
+  const element = fieldRef.value;
+  if (!element) return;
+  const selection = readSelection();
+  replaceTextRange(selection.start, selection.length, replacement);
+};
+
+const replaceTextRange = (start: number, length: number, replacement: string) => {
+  const element = fieldRef.value;
+  if (!element) return;
+  const selectionStart = Math.max(0, Math.min(start, element.value.length));
+  const selectionLength = Math.max(0, Math.min(length, element.value.length - selectionStart));
+  const nextValue = normalizeInput(
+    element.value.slice(0, selectionStart) + replacement + element.value.slice(selectionStart + selectionLength)
+  );
+  element.value = nextValue;
+  emitTextValue(nextValue, 'ProgrammaticChange', { undo: true });
+  requestAnimationFrame(resizeTextarea);
 };
 
 const undo = () => {
   if (!undoStack.value.length) return;
-  const prev = undoStack.value.pop()!;
-  redoStack.value.push(props.text);
-  emit('update:text', prev);
-  emit('textChanged', { reason: 'ProgrammaticChange', text: prev });
-  syncUndoRedoFlags();
+  const previous = undoStack.value.pop() ?? '';
+  redoStack.value.push(currentText.value);
+  emitTextValue(previous, 'ProgrammaticChange');
+  requestAnimationFrame(resizeTextarea);
 };
 
 const redo = () => {
   if (!redoStack.value.length) return;
-  const next = redoStack.value.pop()!;
-  undoStack.value.push(props.text);
-  emit('update:text', next);
-  emit('textChanged', { reason: 'ProgrammaticChange', text: next });
-  syncUndoRedoFlags();
+  const next = redoStack.value.pop() ?? '';
+  undoStack.value.push(currentText.value);
+  emitTextValue(next, 'ProgrammaticChange');
+  requestAnimationFrame(resizeTextarea);
 };
 
-const copy = () => {
-  const { text } = readSelection();
-  if (text && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+const copySelectionToClipboard = () => {
+  const selection = readSelection();
+  if (selection.text) void navigator.clipboard?.writeText(selection.text);
 };
 
-const cut = () => {
-  const sel = readSelection();
-  if (sel.text && navigator.clipboard) {
-    navigator.clipboard.writeText(sel.text).catch(() => {});
-    selectedText.value = '';
-  }
+const cutSelectionToClipboard = () => {
+  const selection = readSelection();
+  if (!selection.text) return;
+  void navigator.clipboard?.writeText(selection.text);
+  replaceSelectedText('');
 };
 
-const pasteFromClipboard = () => {
-  if (!navigator.clipboard) return;
-  navigator.clipboard.readText().then((t) => {
-    const el = fieldRef.value as HTMLInputElement | HTMLTextAreaElement | null;
-    if (!el) return;
-    const { start, length } = readSelection();
-    const cur = el.value ?? '';
-    const next = cur.slice(0, start) + t + cur.slice(start + length);
-    el.value = next;
-    setTextValue(next, { undo: true });
-    emit('textChanged', { reason: 'ProgrammaticChange', text: next });
-  });
+const pasteFromClipboard = async () => {
+  const text = await navigator.clipboard?.readText();
+  if (text !== undefined) replaceSelectedText(text);
 };
 
-onMounted(() => {
-  syncUndoRedoFlags();
-});
+const copyContextSelectionToClipboard = () => {
+  if (contextSelection.value.text) void navigator.clipboard?.writeText(contextSelection.value.text);
+};
+
+const cutContextSelectionToClipboard = () => {
+  if (!contextSelection.value.text) return;
+  void navigator.clipboard?.writeText(contextSelection.value.text);
+  replaceTextRange(contextSelection.value.start, contextSelection.value.length, '');
+};
 
 onBeforeUnmount(() => {
   undoStack.value = [];
   redoStack.value = [];
+  contextMenuOpen.value = false;
 });
 
 defineExpose({
   focus,
-  blur: () => fieldRef.value?.blur(),
   selectAll,
   select,
   getRectFromCharacterIndex,
   undo,
   redo,
-  copy,
-  cut,
+  copySelectionToClipboard,
+  cutSelectionToClipboard,
   pasteFromClipboard,
   clearText,
-  // 只读/可读写镜像属性
   get canUndo() {
     return canUndo.value;
   },
@@ -498,208 +650,274 @@ defineExpose({
     return canRedo.value;
   },
   get selectedText() {
-    return selectedText.value;
+    return readSelection().text;
   },
-  set selectedText(v: string) {
-    selectedText.value = v;
+  set selectedText(value: string) {
+    replaceSelectedText(value);
   },
   get selectionStart() {
-    return selectionStart.value;
+    return readSelection().start;
   },
   get selectionLength() {
-    return selectionLength.value;
+    return readSelection().length;
   }
 });
 </script>
 
 <style scoped>
-.win-tb {
-  width: 100%;
+.win-textbox {
+  --textbox-background: var(--control-fill-color-default, var(--ctrl-fill-default));
+  --textbox-background-pointer-over: var(--control-fill-color-secondary, var(--ctrl-fill-secondary));
+  --textbox-background-focused: var(--control-fill-color-input-active, var(--ctrl-fill-input-active));
+  --textbox-background-disabled: var(--control-fill-color-disabled, var(--ctrl-fill-disabled));
+  --textbox-border-top: var(--control-stroke-color-default, var(--ctrl-border-rest));
+  --textbox-border-bottom: var(--control-strong-stroke-color-default, var(--ctrl-strong-stroke));
+  --textbox-border-focused: var(--system-accent-color-dark-1, var(--accent-base, var(--accent-default)));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
-/* Header（对标 TextBox.Header） */
-.win-tb-header {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 6px;
+:global(html.theme-dark) .win-textbox,
+:global(.example-theme-wrapper.theme-dark) .win-textbox {
+  --textbox-border-focused: var(--system-accent-color-light-2, var(--accent-base, var(--accent-default)));
 }
 
-/* 边框（对标 TextBox 控件模板 Border） */
-.win-tb-border {
+:global(html.theme-light) .win-textbox,
+:global(.example-theme-wrapper.theme-light) .win-textbox {
+  --textbox-border-focused: var(--system-accent-color-dark-1, var(--accent-base, var(--accent-default)));
+}
+
+@media (prefers-color-scheme: dark) {
+  .win-textbox {
+    --textbox-border-focused: var(--system-accent-color-light-2, var(--accent-base, var(--accent-default)));
+  }
+}
+
+.win-textbox-header {
+  margin-bottom: 8px;
+  color: var(--text-primary, var(--text-fill-color-primary));
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.win-textbox-border {
   position: relative;
+  min-height: 32px;
+  overflow: hidden;
+  background: var(--textbox-background);
+  border: 1px solid var(--textbox-border-top);
+  border-bottom-color: var(--textbox-border-bottom);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 transparent;
+  box-sizing: border-box;
+  transition:
+    background var(--fast-duration, 100ms),
+    border-color var(--fast-duration, 100ms),
+    box-shadow var(--fast-duration, 100ms);
+}
+
+.win-textbox.is-hovered:not(.is-disabled) .win-textbox-border {
+  background: var(--textbox-background-pointer-over);
+}
+
+.win-textbox.is-focused:not(.is-disabled) .win-textbox-border {
+  background: var(--textbox-background-focused);
+  border-bottom-color: var(--textbox-border-top);
+  box-shadow: inset 0 -2px 0 var(--textbox-border-focused);
+}
+
+.win-textbox-content {
   display: flex;
   align-items: stretch;
-  min-height: 36px;
-  background: var(--ctrl-fill-default);
-  border: 1px solid var(--ctrl-border-rest);
-  border-bottom-color: var(--ctrl-strong-stroke);
-  border-radius: 4px;
-  transition: background var(--fast-duration), border-color var(--fast-duration);
+  min-width: 0;
+  min-height: 30px;
+}
+
+.win-textbox-field {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
   box-sizing: border-box;
+  padding: 5px 6px 6px 10px;
+  color: var(--text-primary, var(--text-fill-color-primary));
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  user-select: text;
+}
+
+.win-textbox-textarea {
+  min-height: 76px;
+  height: auto;
+  resize: none;
   overflow: hidden;
 }
 
-.win-tb-border:hover {
-  background: var(--ctrl-fill-secondary);
-}
-
-.win-tb-border.focused {
-  background: var(--ctrl-fill-default);
-  border-color: var(--ctrl-border-rest);
-  border-bottom-color: var(--accent-base);
-  border-bottom-width: 2px;
-  padding-bottom: 0;
-}
-
-/* 内容行：prefix | 输入区 | suffix | 清除按钮 */
-.win-tb-content {
+.win-textbox-delete-button {
+  appearance: none;
+  -webkit-appearance: none;
+  align-self: stretch;
   position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.win-tb-field {
-  flex: 1;
-  /* 关键：覆盖全局 user-select:none，否则无法编辑/选择文本 */
-  user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-primary);
-  min-width: 0;
-  padding: 7px 12px;
-  box-sizing: border-box;
-  text-align: v-bind(resolvedTextAlign);
-}
-
-/* 选中高亮（对标 TextBox.SelectionHighlightColor） */
-.win-tb-field::selection {
-  background: var(--tb-sel, var(--accent-base));
-  color: var(--accent-text);
-}
-
-.win-tb-textarea {
-  resize: vertical;
-  min-height: 36px;
-  padding: 7px 12px;
-}
-
-.win-tb-field::placeholder {
-  color: var(--text-tertiary);
-  opacity: 1;
-}
-
-.win-tb-field:read-only {
-  color: var(--text-primary);
-}
-
-/* 前缀/后缀（对标 TextBox.Prefixes / Suffixes） */
-.win-tb-prefix,
-.win-tb-suffix {
-  display: flex;
-  align-items: center;
-  color: var(--text-secondary);
-  font-size: 14px;
-  flex-shrink: 0;
-  padding: 0 2px;
-}
-.win-tb-prefix {
-  padding-left: 10px;
-}
-.win-tb-suffix {
-  padding-right: 6px;
-}
-
-/* 清除按钮（对标 WinUI 3 TextBox ClearButton） */
-.win-tb-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-right: 6px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  color: var(--text-secondary);
-  flex-shrink: 0;
+  width: 40px;
+  min-width: 40px;
+  height: auto;
+  min-height: 0;
+  margin: 0;
   padding: 0;
-  transition: background var(--faster-duration), color var(--faster-duration);
-}
-.win-tb-clear:hover {
-  background: var(--subtle-secondary);
-  color: var(--text-primary);
-}
-.win-tb-clear .icon {
-  font-size: 11px;
+  overflow: hidden;
+  color: var(--text-secondary, var(--text-fill-color-secondary, rgba(0, 0, 0, 0.62)));
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  flex: 0 0 40px;
+  font: inherit;
   line-height: 1;
 }
 
-/* PlaceholderText（对标 TextBox PlaceholderTextContentPresenter，无文本时覆盖显示） */
-.win-tb-placeholder {
+:slotted(.win-textbox-action-button) {
+  appearance: none;
+  -webkit-appearance: none;
+  align-self: stretch;
+  position: relative;
+  width: 40px;
+  min-width: 40px;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--text-secondary, var(--text-fill-color-secondary, rgba(0, 0, 0, 0.62)));
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  flex: 0 0 40px;
+  font: inherit;
+  line-height: 1;
+}
+
+:slotted(.win-textbox-action-button.win-textbox-action-query) {
+  width: 40px;
+  min-width: 40px;
+  flex-basis: 40px;
+  margin-left: 0;
+}
+
+:slotted(.win-textbox-action-button.win-textbox-action-number) {
+  width: 40px;
+  min-width: 40px;
+  flex-basis: 40px;
+}
+
+:slotted(.win-textbox-action-button:hover) {
+  color: var(--text-primary, var(--text-fill-color-primary, rgba(0, 0, 0, 0.89)));
+}
+
+:slotted(.win-textbox-action-button:active) {
+  color: var(--text-tertiary, var(--text-fill-color-tertiary, rgba(0, 0, 0, 0.45)));
+}
+
+:slotted(.win-textbox-action-button:disabled) {
+  color: var(--text-disabled, var(--text-fill-color-disabled, rgba(0, 0, 0, 0.36)));
+  cursor: default;
+}
+
+.win-textbox-delete-button-layout {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  inset: 4px;
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  pointer-events: none;
-  color: var(--text-tertiary);
-  font-size: 14px;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  z-index: 0;
-}
-.win-tb-placeholder.is-multiline {
-  align-items: flex-start;
-  padding-top: 9px;
-  white-space: normal;
-}
-.win-tb-field {
-  position: relative;
-  z-index: 1;
-}
-.win-tb-clear {
-  z-index: 2;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
-/* Description（对标 TextBox.Description） */
-.win-tb-description {
+.win-textbox-delete-button,
+:slotted(.win-textbox-action-button) {
+  display: block;
+}
+
+:deep(.win-textbox-action-button > span) {
+  position: absolute;
+  inset: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+:deep(.win-textbox-action-button.win-textbox-action-query > span) {
+  inset: 4px;
+}
+
+:deep(.win-textbox-action-button:hover > span),
+.win-textbox-delete-button:hover .win-textbox-delete-button-layout {
+  background: var(--subtle-fill-color-secondary, var(--subtle-secondary, rgba(0, 0, 0, 0.06)));
+}
+
+:deep(.win-textbox-action-button:active > span),
+.win-textbox-delete-button:active .win-textbox-delete-button-layout {
+  background: var(--subtle-fill-color-tertiary, var(--subtle-tertiary, rgba(0, 0, 0, 0.03)));
+  color: var(--text-tertiary, var(--text-fill-color-tertiary, rgba(0, 0, 0, 0.45)));
+}
+
+.win-textbox-delete-glyph {
+  display: block;
+  font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets", sans-serif;
   font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 6px;
+  line-height: 12px;
 }
 
-/* 只读 / 禁用态 */
-.win-tb.is-readonly .win-tb-border {
-  background: var(--ctrl-fill-tertiary);
+.win-textbox-field::placeholder {
+  color: var(--text-tertiary, var(--text-fill-color-tertiary, rgba(0, 0, 0, 0.45)));
+  opacity: 1;
 }
-.win-tb.is-disabled .win-tb-border {
-  background: var(--ctrl-fill-disabled);
-  border-bottom-color: var(--ctrl-strong-stroke-disabled);
-  cursor: not-allowed;
+
+.win-textbox-field::selection {
+  color: var(--accent-text, #ffffff);
+  background: var(--textbox-selection-background, var(--accent-base, var(--accent-default, #0067c0)));
 }
-.win-tb.is-disabled .win-tb-field {
-  color: var(--text-disabled);
-  cursor: not-allowed;
+
+.win-textbox-description {
+  margin-top: 6px;
+  color: var(--text-secondary, var(--text-fill-color-secondary, rgba(0, 0, 0, 0.62)));
+  font-size: 12px;
+  line-height: 16px;
 }
-.win-tb.is-disabled .win-tb-clear {
-  display: none;
+
+.win-textbox.is-readonly .win-textbox-border {
+  background: var(--control-fill-color-tertiary, var(--ctrl-fill-tertiary, rgba(249, 249, 249, 0.3)));
+}
+
+.win-textbox.is-disabled {
+  pointer-events: none;
+}
+
+.win-textbox.is-disabled .win-textbox-border {
+  background: var(--textbox-background-disabled);
+  border-color: var(--textbox-border-top);
+  border-bottom-color: var(--ctrl-strong-stroke-disabled, rgba(0, 0, 0, 0.22));
+}
+
+.win-textbox.is-disabled .win-textbox-header,
+.win-textbox.is-disabled .win-textbox-description,
+.win-textbox.is-disabled .win-textbox-field {
+  color: var(--text-disabled, var(--text-fill-color-disabled, rgba(0, 0, 0, 0.36)));
+}
+
+.win-textbox.is-disabled .win-textbox-field::placeholder {
+  color: var(--text-disabled, var(--text-fill-color-disabled, rgba(0, 0, 0, 0.36)));
 }
 </style>

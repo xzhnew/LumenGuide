@@ -11,7 +11,7 @@ export interface PageMeta {
   desc: string
   descZh: string
   keywords: string[]
-  content?: string // 文章正文（HTML 字符串），留空则显示占位说明
+  content?: string // 文章正文纯文本，留空则搜索时忽略
 }
 
 export interface PageGroup {
@@ -76,7 +76,7 @@ export function buildNavMenuItems(): Array<{
   ];
 }
 
-/** 搜索页面元数据 */
+/** 搜索页面元数据（标题、描述、关键词、正文内容） */
 export function searchPages(query: string): PageMeta[] {
   if (!query.trim()) return [];
   const q = query.toLowerCase().trim();
@@ -85,6 +85,7 @@ export function searchPages(query: string): PageMeta[] {
     item.titleZh.includes(q) ||
     item.desc.toLowerCase().includes(q) ||
     item.descZh.includes(q) ||
-    item.keywords.some(k => k.toLowerCase().includes(q))
+    item.keywords.some(k => k.toLowerCase().includes(q)) ||
+    (item.content && item.content.toLowerCase().includes(q))
   );
 }
