@@ -255,12 +255,11 @@ const isSmallScreen = ref(typeof window !== 'undefined' ? window.innerWidth < 64
 const keyboardH = ref(0);
 
 // 小屏弹窗独立开关：与输入框焦点解耦，键盘收起后弹窗不自动关闭；
-// 关闭方式：① 向下拖拽把手超过阈值（拖出屏幕）② 弹窗/搜索框之外点击两次及以上。
+// 关闭方式：① 向下拖拽把手把面板缩到“显示不下一行文字”（此时已接近屏幕底部）即关闭
+//           ② 弹窗/搜索框之外点击两次及以上。
 const popupOpen = ref(false);
 // 小屏拖拽状态：拖拽中禁用过渡以便实时跟随手指；释放后恢复过渡回弹
 const dragging = ref(false);
-// 小屏拖拽实时位移（px），用于把底部抽屉向下推出屏幕
-const dragOffset = ref(0);
 
 // Text（对标 AutoSuggestBox.Text）
 const query = computed({
@@ -396,7 +395,7 @@ watch(isFocused, (v) => { if (!v) popupHeight.value = null; });
 
 // 弹窗（小屏 popupOpen）关闭时，清理拖拽/点击计数状态
 watch(popupOpen, (v) => {
-  if (!v) { popupHeight.value = null; dragOffset.value = 0; outsideTapCount = 0; }
+  if (!v) { popupHeight.value = null; outsideTapCount = 0; }
 });
 
 // 最近访问与收藏
@@ -431,32 +430,40 @@ const showFooter = computed(() => !!query.value);
 
 // 弹窗样式（使用 popupPos 响应式更新，并应用 MaxSuggestionHeight / 拖动高度 / 键盘抬升）
 const popupStyle = computed(() => {
-  const base = { ...popupPos.value };
   const kb = keyboardH.value;
   const isSmall = isSmallScreen.value;
-  const style: Record<string, string> = { ...base };
-  // 小屏拖拽中：实时跟随手指（禁用过渡），并随向下拖拽把抽屉推出屏幕
+  const style: Record<string, string> = { ...popupPos.value };
+  // 小屏拖拽中：实时跟随手指（禁用过渡），反应更跟手
   if (isSmall && dragging.value) style.transition = 'none';
-  if (isSmall && dragOffset.value > 0) style.transform = `translateY(${dragOffset.value}px)`;
-  // 小屏 + 键盘升起：把弹窗抬到键盘上方（底边贴键盘顶沿），
-  // 有搜索结果时只显示一条（正好在键盘上方），空白态则按可用空间自适应。
-  if (isSmall && kb > 80) {
-    style['--kb-offset'] = kb + 'px';
-    if (query.value && flatSuggestions.value.length) {
-      // 仅显示一条搜索结果（把手 ~20 + 一条结果 ~76 + 上下内边距）
-      const compactH = 104;
-      style.height = compactH + 'px';
-      style.maxHeight = compactH + 'px';
-    } else {
-      // 空白态（最近访问/收藏）：限制最大高度不超出键盘上方可用区域
-      style.maxHeight = Math.max(140, window.innerHeight - kb - 12) + 'px';
+
+  if (isSmall) {
+    // 键盘升起：底部贴键盘顶沿
+    if (kb > 80) style['--kb-offset'] = kb + 'px';
+
+    // 用户拖拽锁定了高度：以拖拽高度为准（覆盖紧凑态/自动高度），底边贴底从底部向上撑高
+    if (popupHeight.value) {
+      const h = popupHeight.value;
+      style.height = h + 'px';
+      style.maxHeight = h + 'px';
+      return style;
+    }
+
+    // 键盘升起且未锁定高度：紧凑态（有结果只显示一条；空白态按可用空间自适应）
+    if (kb > 80) {
+      if (query.value && flatSuggestions.value.length) {
+        // 仅显示一条搜索结果（把手 ~20 + 一条结果 ~76 + 上下内边距）
+        const compactH = 104;
+        style.height = compactH + 'px';
+        style.maxHeight = compactH + 'px';
+      } else {
+        // 空白态（最近访问/收藏）：限制最大高度不超出键盘上方可用区域
+        style.maxHeight = Math.max(140, window.innerHeight - kb - 12) + 'px';
+      }
+      return style;
     }
     return style;
   }
-  if (isSmall && popupHeight.value) {
-    // 小屏（桌面模式回退）锁定高度，底边贴底由 CSS 控制，仅改高度即从底部向上撑高
-    return { ...style, height: popupHeight.value + 'px', maxHeight: '92vh' };
-  }
+
   // 桌面 / 顶部 / 自动：固定下拉卡片，高度由内容撑开（封顶 70vh 由基础样式控制），不可拖拽
   if (props.maxSuggestionHeight > 0) style.maxHeight = props.maxSuggestionHeight + 'px';
   return style;
@@ -468,15 +475,19 @@ const popupStyle = computed(() => {
 let dragStart = { y: 0, bottom: 0, height: 0 };
 // 小屏：弹窗之外的点击计数（点两次才算关闭，避免第一次点击只是收起软键盘）
 let outsideTapCount = 0;
+// 小屏向下拖拽关闭的阈值：当弹窗高度缩到“显示不下一行文字”即触发关闭（此时面板已接近屏幕底部）
+let dragCloseHeight = 56;
 
 const startResize = (e: PointerEvent) => {
   if (!isSmallScreen.value || !popupRef.value) return; // 仅小屏可拖拽
   const rect = popupRef.value.getBoundingClientRect();
   dragStart = { y: e.clientY, bottom: rect.bottom, height: rect.height };
   popupHeight.value = rect.height; // 锁定当前高度，避免首帧跳动
+  // 测量“一行文字”的高度作为关闭阈值：缩到不足一行即关闭
+  const firstRow = popupRef.value.querySelector('.win-search-suggestion, .win-search-simple-item');
+  dragCloseHeight = firstRow ? (firstRow as HTMLElement).offsetHeight + 4 : 56;
   isResizing = true; // 标记拖拽中，阻止 updatePopupPos 覆盖位置
   dragging.value = true;
-  dragOffset.value = 0;
   outsideTapCount = 0;
   window.addEventListener('pointermove', onResizeMove);
   window.addEventListener('pointerup', stopResize);
@@ -484,10 +495,15 @@ const startResize = (e: PointerEvent) => {
 
 const onResizeMove = (e: PointerEvent) => {
   const deltaY = e.clientY - dragStart.y;
-  // 移动端底部抽屉：向下拖拽 = 拖出屏幕关闭（实时位移反馈），向上拖无效
+  // 移动端底部抽屉：上下拖动 = 调整面板高度（向上更高、向下更矮）
   if (isSmallScreen.value) {
-    dragOffset.value = deltaY > 0 ? deltaY : 0;
-    if (deltaY > 96) closePopup(); // 向下拖过阈值即关闭
+    const kb = keyboardH.value;
+    const maxH = Math.round(kb > 80 ? window.innerHeight - kb - 12 : window.innerHeight * 0.92);
+    // 向上拖（deltaY<0）→ 更高；向下拖（deltaY>0）→ 更矮
+    const h = Math.max(8, Math.min(maxH, dragStart.height - deltaY));
+    popupHeight.value = h;
+    // 向下拖到“显示不下一行文字”（高度不足一行，面板已接近屏幕底部）→ 关闭
+    if (h <= dragCloseHeight) closePopup();
     return;
   }
   // 桌面：向上拖 → 变高，底边固定、顶边跟随
@@ -504,11 +520,6 @@ const onResizeMove = (e: PointerEvent) => {
 };
 
 const stopResize = () => {
-  // 移动端：未达关闭阈值则弹回底部（过渡由 base 样式提供）
-  if (isSmallScreen.value && dragOffset.value > 0 && popupOpen.value) {
-    dragging.value = false;
-    requestAnimationFrame(() => { dragOffset.value = 0; });
-  }
   isResizing = false;
   dragging.value = false;
   window.removeEventListener('pointermove', onResizeMove);
@@ -519,7 +530,6 @@ const stopResize = () => {
 const closePopup = () => {
   popupOpen.value = false;
   dragging.value = false;
-  dragOffset.value = 0;
   isResizing = false;
   outsideTapCount = 0;
   inputRef.value?.blur();
@@ -532,7 +542,6 @@ const onFocus = () => {
   isFocused.value = true;
   popupOpen.value = true; // 小屏：弹窗打开（与焦点解耦，键盘收起不关闭）
   outsideTapCount = 0;
-  dragOffset.value = 0;
   updatePopupPos();
 };
 

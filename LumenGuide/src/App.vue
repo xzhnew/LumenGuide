@@ -204,16 +204,28 @@ onBeforeUnmount(() => {
 @import './styles/theme.css';
 @import './styles/animations.css';
 
-@font-face {
-  font-family: 'LumenGuideIcons';
-  src: url('./assets/Fonts/SEGOEICONS.TTF') format('truetype');
-  font-display: block;
-}
-
+/* 图标字体已内联（styles/icon-font.css，base64 嵌入，零网络依赖）。
+   以下用 !important 统一强制 LumenGuideIcons 优先，覆盖各组件 scoped 样式中
+   遗漏 LumenGuideIcons 的 font-family 覆盖——这些覆盖在缺少 Segoe 字体的
+   Mac / 手机上会渲染成豆腐块（正是“收藏/颜色/设置图标不显示”的根因）。 */
 body .icon,
 body .icon-btn,
-body .ptr-icon-wrapper {
-  font-family: 'LumenGuideIcons', 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif;
+body .ptr-icon-wrapper,
+body .symbol-icon,
+body .win-asb-icon,
+body .win-symbol-icon,
+body .win-expander-arrow,
+body .close-icon,
+body .infobadge-icon,
+body .win-password-reveal span,
+body .win-pull-to-refresh,
+body .win-textbox-delete-glyph,
+body .win-number-compact-indicator span,
+body .win-number-popup-button span,
+body .checkbox-box.is-checked:after,
+body .checkbox-box.is-indeterminate:after,
+body .radio-box.is-checked:after {
+  font-family: 'LumenGuideIcons', 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif !important;
 }
 
 .page-container {
