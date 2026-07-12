@@ -5,6 +5,7 @@
          :class="[isClosing ? 'is-closing' : '', openDirection === 'up' ? 'from-bottom' : '', alignmentClass, shadowVisible ? 'shadow-visible' : '']"
          :style="posStyle">
       <div class="win-menu-flyout"
+           ref="menuRef"
            @animationend="onAnimEnd">
         <div class="win-menu-flyout-scroll">
           <div v-for="(item, i) in items" :key="i"
@@ -20,7 +21,7 @@
   </Teleport>
 </template>
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 const props = defineProps({
   open: Boolean,
   anchorRect: Object,
@@ -30,6 +31,8 @@ const props = defineProps({
 const emit = defineEmits(['close', 'select']);
 const shadowVisible = ref(false);
 const visible = ref(false);
+const menuRef = ref(null);
+const menuSize = ref({ w: 0, h: 0 });
 const isClosing = ref(false);
 const openDirection = ref('down');
 const windowHeight = ref(typeof window === 'undefined' ? 600 : window.innerHeight);
@@ -71,8 +74,10 @@ const posStyle = computed(() => {
   if (!props.anchorRect) return {};
   const r = props.anchorRect;
   const viewH = windowHeight.value;
+  const viewW = typeof window === 'undefined' ? 800 : window.innerWidth;
   const margin = 8;
   const gap = 6;
+  const w = menuSize.value.w;
 
   if (r.width === 0) {
     const maxH = viewH - r.top - margin;
@@ -89,38 +94,53 @@ const posStyle = computed(() => {
 
   if (spaceBelow >= spaceAbove) {
     openDirection.value = 'down';
+    const top = (r.bottom + gap);
+    const maxH = Math.max(0, spaceBelow);
     if (props.alignment === 'right') {
+      // 用 right 锚定右边缘，避免用 transform（transform 会废掉 backdrop-filter）
       return {
-        top: (r.bottom + gap) + 'px',
-        left: r.right + 'px',
-        transform: 'translateX(-100%)',
-        '--flyout-max-height': Math.max(0, spaceBelow) + 'px'
+        top: top + 'px',
+        right: (viewW - r.right) + 'px',
+        left: 'auto',
+        '--flyout-max-height': maxH + 'px'
       };
     }
+    const left = (r.left + r.width / 2) - w / 2;
     return {
-      top: (r.bottom + gap) + 'px',
-      left: (r.left + r.width / 2) + 'px',
-      transform: 'translateX(-50%)',
-      '--flyout-max-height': Math.max(0, spaceBelow) + 'px'
+      top: top + 'px',
+      left: left + 'px',
+      '--flyout-max-height': maxH + 'px'
     };
   } else {
     openDirection.value = 'up';
+    const bottom = (viewH - r.top + gap);
+    const maxH = Math.max(0, spaceAbove);
     if (props.alignment === 'right') {
       return {
-        bottom: (viewH - r.top + gap) + 'px',
-        left: r.right + 'px',
-        transform: 'translateX(-100%)',
-        '--flyout-max-height': Math.max(0, spaceAbove) + 'px'
+        bottom: bottom + 'px',
+        right: (viewW - r.right) + 'px',
+        left: 'auto',
+        '--flyout-max-height': maxH + 'px'
       };
     }
+    const left = (r.left + r.width / 2) - w / 2;
     return {
-      bottom: (viewH - r.top + gap) + 'px',
-      left: (r.left + r.width / 2) + 'px',
-      transform: 'translateX(-50%)',
-      '--flyout-max-height': Math.max(0, spaceAbove) + 'px'
+      bottom: bottom + 'px',
+      left: left + 'px',
+      '--flyout-max-height': maxH + 'px'
     };
   }
 });
+
+// 渲染后测量菜单尺寸，用于居中/右对齐时不依赖 transform 计算位置（transform 会废掉 backdrop-filter）
+watch([() => props.open, () => props.anchorRect], async () => {
+  if (visible.value && menuRef.value) {
+    await nextTick();
+    if (menuRef.value) {
+      menuSize.value = { w: menuRef.value.offsetWidth, h: menuRef.value.offsetHeight };
+    }
+  }
+}, { flush: 'post' });
 </script>
 <style>
   .win-menu-flyout-wrap {
@@ -195,24 +215,20 @@ const posStyle = computed(() => {
   @keyframes flyout-menu-open-down {
     from {
       clip-path: inset(0 0 calc(100% - 1px) 0);
-      transform: translateY(-16px);
     }
 
     to {
       clip-path: inset(0 0 0 0);
-      transform: translateY(0);
     }
   }
 
   @keyframes flyout-menu-open-up {
     from {
       clip-path: inset(calc(100% - 1px) 0 0 0);
-      transform: translateY(16px);
     }
 
     to {
       clip-path: inset(0 0 0 0);
-      transform: translateY(0);
     }
   }
 

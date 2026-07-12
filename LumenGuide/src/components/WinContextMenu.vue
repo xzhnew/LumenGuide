@@ -7,6 +7,7 @@
       class="win-context-menu"
       :style="posStyle"
       @contextmenu.prevent>
+      <div class="win-context-menu-surface">
       <div v-for="(item, i) in items" :key="i">
         <div
           v-if="item.kind === 'separator'"
@@ -22,6 +23,7 @@
           <span class="win-context-menu-label">{{ item.label }}</span>
           <span v-if="item.shortcut" class="win-context-menu-shortcut">{{ item.shortcut }}</span>
         </div>
+      </div>
       </div>
     </div>
   </Teleport>
@@ -150,6 +152,12 @@ onBeforeUnmount(() => {
 .win-context-menu {
   position: fixed;
   z-index: 10010;
+  font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  /* transform 动画只放外层；模糊材质在内层 .win-context-menu-surface，避免自身 transform 废掉 backdrop-filter */
+  animation: ctxmenu-in 140ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+
+.win-context-menu-surface {
   min-width: 200px;
   max-width: min(320px, calc(100vw - 16px));
   padding: 4px;
@@ -160,8 +168,6 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   backdrop-filter: var(--flyout-backdrop, blur(30px));
   -webkit-backdrop-filter: var(--flyout-backdrop, blur(30px));
-  font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  animation: ctxmenu-in 140ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
 }
 
 .win-context-menu.is-closing {
@@ -242,8 +248,8 @@ onBeforeUnmount(() => {
   margin: 4px 8px;
 }
 
-html.theme-dark .win-context-menu,
-.example-theme-wrapper.theme-dark .win-context-menu {
+html.theme-dark .win-context-menu-surface,
+.example-theme-wrapper.theme-dark .win-context-menu-surface {
   background: var(--material-acrylic, rgba(40, 40, 40, 0.88));
   color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);

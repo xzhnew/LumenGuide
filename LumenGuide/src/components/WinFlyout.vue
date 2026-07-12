@@ -25,6 +25,8 @@ const anchorRef = ref(null);
 const flyoutRef = ref(null);
 const actualDirection = ref('down');
 const position = ref({ top: 0, left: 0 });
+const flyoutWidth = ref(0);
+const measure = () => { if (flyoutRef.value) flyoutWidth.value = flyoutRef.value.offsetWidth; };
 
 const computeDirection = () => {
   if (props.direction !== 'auto') {
@@ -64,13 +66,13 @@ const computePosition = () => {
     top = rect.top + scrollY - 8;
   }
 
-  // 计算水平位置
+  // 计算水平位置（居中/右对齐通过减去自身宽度实现，避免用 transform 废掉 backdrop-filter）
   if (props.align === 'left') {
     left = rect.left + scrollX;
   } else if (props.align === 'center') {
-    left = rect.left + scrollX + rect.width / 2;
+    left = rect.left + scrollX + rect.width / 2 - flyoutWidth.value / 2;
   } else if (props.align === 'right') {
-    left = rect.right + scrollX;
+    left = rect.right + scrollX - flyoutWidth.value;
   }
 
   position.value = { top, left };
@@ -107,7 +109,8 @@ const show = () => {
   computePosition();
   visible.value = true;
   nextTick(() => {
-    computePosition(); // 再次计算以处理向上弹出的高度
+    measure();
+    computePosition(); // 再次计算：用测量到的宽度做居中/右对齐，并处理向上弹出的高度
   });
 };
 
@@ -133,6 +136,7 @@ const onDocClick = (e) => {
 
 const updatePosition = () => {
   if (visible.value) {
+    measure();
     computePosition();
   }
 };
@@ -175,15 +179,8 @@ defineExpose({ show, hide, toggle, visible });
   min-width: 200px;
 }
 
-/* Align: Center */
-.win-flyout.align-center {
-  transform: translateX(-50%);
-}
-
-/* Align: Right */
-.win-flyout.align-right {
-  transform: translateX(-100%);
-}
+/* Align: Center —— 水平居中由 JS 测量宽度后计算 left 实现，不再用 transform（会废掉 backdrop-filter） */
+/* Align: Right —— 右对齐由 JS 测量宽度后计算 left 实现，同样不用 transform */
 
 /* Transform origin for animations */
 .win-flyout.direction-down.align-left {
@@ -228,11 +225,11 @@ defineExpose({ show, hide, toggle, visible });
 }
 
 .flyout-anim-down-enter-from.align-center {
-  transform: translateX(-50%) scaleY(0.9) translateY(-4px);
+  transform: scaleY(0.9) translateY(-4px);
 }
 
 .flyout-anim-down-enter-from.align-right {
-  transform: translateX(-100%) scaleY(0.9) translateY(-4px);
+  transform: scaleY(0.9) translateY(-4px);
 }
 
 .flyout-anim-down-leave-to {
@@ -244,11 +241,11 @@ defineExpose({ show, hide, toggle, visible });
 }
 
 .flyout-anim-down-leave-to.align-center {
-  transform: translateX(-50%) scaleY(0.9) translateY(-4px);
+  transform: scaleY(0.9) translateY(-4px);
 }
 
 .flyout-anim-down-leave-to.align-right {
-  transform: translateX(-100%) scaleY(0.9) translateY(-4px);
+  transform: scaleY(0.9) translateY(-4px);
 }
 
 /* 向上弹出动画 */
@@ -269,11 +266,11 @@ defineExpose({ show, hide, toggle, visible });
 }
 
 .flyout-anim-up-enter-from.align-center {
-  transform: translateX(-50%) scaleY(0.9) translateY(4px);
+  transform: scaleY(0.9) translateY(4px);
 }
 
 .flyout-anim-up-enter-from.align-right {
-  transform: translateX(-100%) scaleY(0.9) translateY(4px);
+  transform: scaleY(0.9) translateY(4px);
 }
 
 .flyout-anim-up-leave-to {
@@ -285,11 +282,11 @@ defineExpose({ show, hide, toggle, visible });
 }
 
 .flyout-anim-up-leave-to.align-center {
-  transform: translateX(-50%) scaleY(0.9) translateY(4px);
+  transform: scaleY(0.9) translateY(4px);
 }
 
 .flyout-anim-up-leave-to.align-right {
-  transform: translateX(-100%) scaleY(0.9) translateY(4px);
+  transform: scaleY(0.9) translateY(4px);
 }
 
 /* 保留旧的placement API用于向后兼容 */
