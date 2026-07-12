@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
   position: fixed;
   z-index: 10010;
   min-width: 200px;
-  max-width: 320px;
+  max-width: min(320px, calc(100vw - 16px));
   padding: 4px;
   box-sizing: border-box;
   background: var(--material-acrylic, rgba(250, 250, 250, 0.90));

@@ -1,4 +1,4 @@
-import { ref, computed, type Ref, type ComputedRef } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, type Ref, type ComputedRef } from 'vue';
 import { useFavorites } from './useFavorites';
 
 /** 右键菜单项（与 WinContextMenu 的 props.items 对齐） */
@@ -50,6 +50,19 @@ export function useContextMenu(options: ContextMenuOptions): ContextMenuApi {
   const contextMenuTarget = ref<EventTarget | null>(null);
   // 防止菜单关闭后短时间内被意外重新触发（如粘贴操作引发的连锁事件）
   let menuLockUntil = 0;
+  // 记录最后一次触摸位置：移动端长按触发的 contextmenu 事件坐标在很多浏览器里
+  // 不可靠（常为 0/0 或落在角落），因此用真实触摸点来定位菜单。
+  let lastTouchX: number | null = null;
+  let lastTouchY: number | null = null;
+  const recordTouch = (e: TouchEvent): void => {
+    const t = e.touches && e.touches[0];
+    if (t) {
+      lastTouchX = t.clientX;
+      lastTouchY = t.clientY;
+    }
+  };
+  const isTouchDevice = typeof window !== 'undefined'
+    && ('ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0);
 
   const { isFavorite, toggleFavorite } = useFavorites();
 
@@ -139,7 +152,20 @@ export function useContextMenu(options: ContextMenuOptions): ContextMenuApi {
     contextMenuTarget.value = e.target;
     // 兼容输入框和普通文本的选中内容获取
     contextMenuSelection.value = getSelectionText(e.target);
-    contextMenuAnchor.value = { clientX: e.clientX, clientY: e.clientY };
+
+    // 计算锚点坐标：
+    // 桌面端直接用鼠标坐标；移动端长按触发的 contextmenu 事件坐标常常不可靠
+    // （0/0 或落在角落），因此优先使用刚才记录的触摸点位置。
+    const touchCap = (e as unknown as { sourceCapabilities?: { firesTouchEvents?: boolean } }).sourceCapabilities;
+    const isTouch = !!touchCap?.firesTouchEvents;
+    let x = e.clientX;
+    let y = e.clientY;
+    const degenerate = (typeof x !== 'number' || typeof y !== 'number') || (x === 0 && y === 0);
+    if ((isTouch || isTouchDevice || degenerate) && lastTouchX !== null && lastTouchY !== null) {
+      x = lastTouchX;
+      y = lastTouchY;
+    }
+    contextMenuAnchor.value = { clientX: x, clientY: y };
     contextMenuOpen.value = true;
     e.preventDefault();
     e.stopPropagation();
@@ -268,6 +294,19 @@ export function useContextMenu(options: ContextMenuOptions): ContextMenuApi {
       case 'settings': currentPage.value = 'settings'; break;
     }
   };
+
+  onMounted(() => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('touchstart', recordTouch as EventListener, { passive: true });
+      window.addEventListener('touchmove', recordTouch as EventListener, { passive: true });
+    }
+  });
+  onBeforeUnmount(() => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('touchstart', recordTouch as EventListener);
+      window.removeEventListener('touchmove', recordTouch as EventListener);
+    }
+  });
 
   return {
     contextMenuOpen,

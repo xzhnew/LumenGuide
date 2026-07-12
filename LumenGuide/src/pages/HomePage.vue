@@ -42,7 +42,7 @@
         <ul v-else class="sidebar-list">
           <li v-for="item in recentPages" :key="item.key" class="sidebar-item" @click="goPage(item.key)">
             <span class="icon sidebar-dot">{{ item.icon }}</span>
-            <span>{{ item.titleZh || item.title }}</span>
+            <span>{{ item.titlePlain || item.titleZh || item.title }}</span>
           </li>
         </ul>
       </div>
@@ -56,7 +56,7 @@
         <ul v-else class="sidebar-list">
           <li v-for="item in favoritePages" :key="item.key" class="sidebar-item" @click="goPage(item.key)">
             <span class="icon sidebar-dot">&#xE734;</span>
-            <span>{{ item.titleZh || item.title }}</span>
+            <span>{{ item.titlePlain || item.titleZh || item.title }}</span>
           </li>
         </ul>
       </div>

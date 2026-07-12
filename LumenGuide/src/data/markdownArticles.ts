@@ -79,7 +79,7 @@ export const markdownArticles: MarkdownArticle[] = [
     "chapter": 2,
     "section": 1,
     "title": "从手机到电脑：思维转换",
-    "icon": "",
+    "icon": "UE717",
     "summary": "习惯了手机触屏？电脑的「窗口 + 文件」逻辑和手机很不一样，先建立正确心智模型。",
     "keywords": [
       "手机",

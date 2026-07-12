@@ -71,7 +71,7 @@
                     class="win-search-simple-item"
                     @mousedown.prevent="chooseSuggestion(item)">
                     <span class="icon win-search-simple-icon">{{ item.icon }}</span>
-                    <span class="win-search-simple-text">{{ item.titleZh || item.title }}</span>
+                    <span class="win-search-simple-text">{{ item.titlePlain || item.titleZh || item.title }}</span>
                   </div>
                 </div>
               </div>
@@ -88,7 +88,7 @@
                     class="win-search-simple-item"
                     @mousedown.prevent="chooseSuggestion(item)">
                     <span class="icon win-search-simple-icon">{{ item.icon }}</span>
-                    <span class="win-search-simple-text">{{ item.titleZh || item.title }}</span>
+                    <span class="win-search-simple-text">{{ item.titlePlain || item.titleZh || item.title }}</span>
                   </div>
                 </div>
               </div>

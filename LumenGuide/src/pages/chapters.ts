@@ -68,6 +68,8 @@ for (const cn of chapterNumbers) {
         title: `Chapter ${cn}.${a.section}`,
         // 导航/标题显示：第一节 开箱初体验（自动序号 + 标题）
         titleZh: `第${toChineseNum(a.section)}节 ${a.title}`,
+        // 纯节名（无「第X节」前缀），用于最近访问/收藏列表
+        titlePlain: a.title,
         desc: a.summary,
         descZh: a.summary,
         keywords: [

@@ -1032,7 +1032,7 @@ onBeforeUnmount(() => {
   opacity: 0;
   color: var(--ScrollBarButtonArrowForeground, var(--ControlStrongFillColorDefaultBrush, var(--ctrl-strong-fill)));
   background: var(--ScrollBarButtonBackground, transparent);
-  font-family: 'WinUIOnWebIcons', 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif;
+  font-family: 'LumenGuideIcons', 'Segoe Fluent Icons', 'Segoe MDL2 Assets', sans-serif;
   font-size: 8px;
   line-height: 1;
   pointer-events: none;

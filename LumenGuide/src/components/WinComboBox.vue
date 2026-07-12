@@ -1,6 +1,7 @@
 <template>
   <div class="win-combo-box" ref="comboRef">
     <button class="win-btn win-combo-btn"
+            :disabled="props.disabled"
             @click="toggle"
             @mousedown="onChevronDown"
             @mouseup="onChevronUp"
@@ -22,7 +23,7 @@
   </div>
 </template>
 <script setup>import { ref, computed, nextTick } from 'vue';
-const props = defineProps({ options: Array, modelValue: Number });
+const props = defineProps({ options: Array, modelValue: Number, disabled: Boolean });
 const emit = defineEmits(['update:modelValue']);
 const isOpen = ref(false); const comboRef = ref(null); const flyoutStyle = ref({}); const flyoutOrigin = ref('center');
 const selectedIndex = computed({ get: () => props.modelValue, set: (val) => emit('update:modelValue', val) });
@@ -52,6 +53,7 @@ const onChevronAnimEnd = () => {
   }
 };
 const toggle = async () => {
+  if (props.disabled) return;
   isOpen.value = !isOpen.value;
   if (isOpen.value) {
     await nextTick();
@@ -82,6 +84,15 @@ const close = () => { isOpen.value = false; };</script>
     justify-content: space-between;
     align-items: center;
     min-width: 120px;
+  }
+
+  .win-combo-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .win-combo-btn:disabled:hover {
+    background: var(--subtle-secondary, transparent);
   }
 
   .win-combo-overlay {

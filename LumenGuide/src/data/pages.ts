@@ -8,6 +8,7 @@ export interface PageMeta {
   icon: string
   title: string
   titleZh: string
+  titlePlain?: string // 纯节名（无「第X节」前缀），用于最近访问/收藏列表
   desc: string
   descZh: string
   keywords: string[]

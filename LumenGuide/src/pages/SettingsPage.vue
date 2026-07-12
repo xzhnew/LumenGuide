@@ -40,7 +40,7 @@
           </div>
         </div>
       </template>
-      <WinComboBox :options="navPositionOptions" :modelValue="navPositionIndex" @update:modelValue="v => navPosition = navPositionValues[v]" />
+      <WinComboBox :options="navPositionOptions" :modelValue="navPositionIndex" :disabled="isSmall" @update:modelValue="v => navPosition = navPositionValues[v]" />
     </WinSettingsCard>
 
     <WinExpander>
@@ -80,14 +80,22 @@ const themeSetting = inject('themeSetting');
 const animSetting = inject('animSetting');
 const navPosition = inject('navPosition');
 
-// 导航窗格位置：自动 / 顶部 / 小屏模式（对齐已改内容的三选项）
+// 小屏（<640px）由 WinNavigationView provide；小屏下导航锁定为「简约」模式，不允许切换
+const isSmallScreen = inject('isSmallScreen');
+const isSmall = computed(() => !!isSmallScreen?.value);
+
+// 导航窗格位置：自动 / 顶部 / 简约（小屏下锁定为「简约」）
 const navPositionOptions = [
   { label: '自动', value: 'Auto' },
   { label: '顶部', value: 'Top' },
-  { label: '小屏模式', value: 'Small' }
+  { label: '简约', value: 'Small' }
 ];
 const navPositionValues = navPositionOptions.map(option => option.value);
-const navPositionIndex = computed(() => Math.max(0, navPositionValues.indexOf(navPosition.value)));
+const navPositionIndex = computed(() => {
+  // 小屏：锁定显示「简约」(Small)，且 WinComboBox 被禁用，无法切换到其他模式
+  if (isSmall.value) return Math.max(0, navPositionValues.indexOf('Small'));
+  return Math.max(0, navPositionValues.indexOf(navPosition.value));
+});
 </script>
 
 <style scoped>

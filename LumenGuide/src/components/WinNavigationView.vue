@@ -35,12 +35,15 @@
           <span class="icon">&#xE712;</span>
         </div>
       </div>
+      <!-- spacer：仅在「顶部模式·桌面端」显示，把「搜索框 + 设置」整组推到最右固定 -->
+      <div class="win-nav-top-spacer"></div>
       <!-- 搜索框：两种模式都显示 -->
       <div class="win-nav-top-search-wrap">
         <slot name="topSearch"></slot>
       </div>
       <!-- 底部菜单 + 设置（LeftMinimal 模式下隐藏，设置通过左面板访问）。
-           紧随搜索框之后，再由 spacer 把整组推到左侧，使「设置」紧挨「搜索框」。 -->
+           桌面顶部模式：设置紧接搜索框、二者靠 spacer 一同固定在最右；
+           小屏顶部模式：设置走汉堡抽屉（见下方 @media(max-width:640px) 内 display:none）。 -->
       <div v-if="isTopNavigation" class="win-nav-menu win-nav-top-footer-menu" ref="topFooterMenuRef">
         <template v-for="item in footerItems" :key="item.value">
           <div class="win-nav-item" :class="{ 'is-selected': selectedValue === item.value }" @click="onItemClick(item)" :ref="el => setItemRef(item.value, el)">
@@ -53,8 +56,7 @@
           <span class="label">{{ settingsLabel }}</span>
         </div>
       </div>
-      <!-- spacer 放在 footer 之后：把「搜索框 + 设置」整组推到左侧，设置紧挨搜索框 -->
-      <div class="win-nav-top-spacer"></div>
+      <!-- spacer 已移至搜索框之前（见上方） -->
       <div v-if="isTopNavigation" class="win-nav-top-measure" ref="topMeasureRef" aria-hidden="true">
         <template v-for="item in menuItems" :key="item.value">
           <div class="win-nav-item" :data-value="item.value">
@@ -240,8 +242,11 @@ const containerWidth = ref(typeof window === 'undefined' ? props.expandedModeThr
 
 const normalizedPaneDisplayMode = computed(() => props.paneDisplayMode || props.position);
 const resolvedPaneDisplayMode = computed(() => {
-  const width = containerWidth.value || (typeof window === 'undefined' ? props.expandedModeThresholdWidth : window.innerWidth);
   const mode = normalizedPaneDisplayMode.value;
+  // 小屏（<640px，即 compactModeThresholdWidth）：无论用户选择何种导航模式，
+  // 强制进入「简约」(LeftMinimal) 模式，且不允许切换为其他模式（临界值内锁定）。
+  if (isSmallScreen.value) return 'LeftMinimal';
+  const width = containerWidth.value || (typeof window === 'undefined' ? props.expandedModeThresholdWidth : window.innerWidth);
   // Auto 模式：根据窗口宽度自动切换
   if (mode === 'Auto') {
     if (width >= props.expandedModeThresholdWidth) return 'Left';
@@ -1887,10 +1892,22 @@ watch(() => props.selectedValue, (val, oldVal) => {
       gap: 8px;
     }
 
+    /* spacer 在桌面端生效：把「搜索框 + 设置」整组推到最右固定 */
+    .win-nav-shell.is-top .win-nav-top-spacer {
+      display: block;
+      flex: 1;
+      min-width: 0;
+    }
+
     .win-nav-shell.is-top .win-nav-top-search-wrap {
       flex: 0 1 340px;
       max-width: 360px;
       min-width: 200px;
+    }
+
+    /* 设置项固定不收缩，紧接搜索框固定在最右 */
+    .win-nav-shell.is-top .win-nav-top-footer-menu {
+      flex-shrink: 0;
     }
   }
 
@@ -2305,9 +2322,17 @@ watch(() => props.selectedValue, (val, oldVal) => {
     width: 100%;
   }
 
-  /* 小屏：隐藏顶部右侧的 footer 菜单（设置项已移入汉堡菜单） */
+  /* 小屏：隐藏顶部右侧 footer（设置项走汉堡抽屉），恢复原始小屏行为 */
   .win-nav-top-footer-menu {
     display: none;
+  }
+  /* 顶部模式小屏：设置只显图标，省空间 */
+  .win-nav-shell.is-top .win-nav-top-footer-menu .label {
+    display: none;
+  }
+  /* 顶部模式小屏：设置固定不收缩，与「尽可能长」的搜索框同行固定在最右 */
+  .win-nav-shell.is-top .win-nav-top-footer-menu {
+    flex-shrink: 0;
   }
 
   /* 小屏：spacer 隐藏，搜索框已由 flex:1 推到合适位置 */
@@ -2393,6 +2418,8 @@ watch(() => props.selectedValue, (val, oldVal) => {
   }
 
   .win-nav-shell.is-left-minimal .win-nav-top-search-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
     max-width: none;
   }
 
