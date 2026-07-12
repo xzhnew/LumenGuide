@@ -21,10 +21,10 @@ export interface PageGroup {
   children: string[] // page keys
 }
 
-// ========== 篇章（卷 / 章）相关数据已迁至 ./pages/chapters ==========
+// ========== 篇章（章 / 节）相关数据已迁至 ./pages/chapters ==========
 // 这里取值并在本模块重新导出，使 App.vue / HomePage.vue / 搜索等现有 import 无需改动。
-import { chapterPlan, chapterNames, chapterArticles, chapterGroups } from '../pages/chapters';
-export { chapterPlan, chapterNames, chapterArticles, chapterGroups };
+import { chapterArticles, chapterGroups } from '../pages/chapters';
+export { chapterArticles, chapterGroups };
 
 // ========== 所有页面元数据（仅包含网站实际存在的页面） ==========
 export const allPages: PageMeta[] = [

@@ -88,6 +88,9 @@ const toggleTheme = () => {
   font-weight: 600;
   margin: 0 0 8px 0;
   color: var(--text-primary);
+  /* 给右上角绝对定位的操作按钮（主题/收藏，约 72px 宽）留出空间，
+     避免窄屏下长标题与按钮重叠 */
+  padding-right: 76px;
 }
 
 .win-page-desc {

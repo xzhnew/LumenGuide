@@ -17,8 +17,8 @@
       </p>
     </section>
 
-    <!-- ====== 九大篇章 ====== -->
-    <div class="section-title"><span class="icon section-icon">&#xE8D9;</span> 九大篇章</div>
+    <!-- ====== 九大章 ====== -->
+    <div class="section-title"><span class="icon section-icon">&#xE8D9;</span> 九大章</div>
       <div class="chapter-grid">
         <button
           v-for="c in chapters"
@@ -71,7 +71,7 @@
         · CC BY-NC-SA 4.0
         &nbsp;·&nbsp;
         基于
-        <a :href="LUMENGUIDE_URL" target="_blank" rel="noopener">全端启萌</a>
+        <a :href="LUMENGUIDE_URL" target="_blank" rel="noopener"> WinUIonWeb </a>
         · GPL-3.0
       </span>
     </div>
@@ -80,16 +80,17 @@
 
 <script setup>
 import { computed, inject } from 'vue';
-import { getPageMeta, chapterArticles, chapterNames } from '../data/pages';
+import { getPageMeta, chapterGroups } from '../data/pages';
 import { useFavorites } from '../composables/useFavorites';
 
 const currentPage = inject('currentPage');
 const goPage = (key) => { if (currentPage) currentPage.value = key; };
 
-// 九大篇章 -> 点击进入各卷第 1 章
-const chapters = chapterNames.map((name, i) => {
-  const first = chapterArticles.find(p => p.key === `ch${i + 1}-1`);
-  return { name, key: `ch${i + 1}-1`, icon: first?.icon || '\uE8D9' };
+// 各章 -> 点击进入该章第 1 节
+const chapters = chapterGroups.map(g => {
+  const firstKey = g.children[0];
+  const first = getPageMeta(firstKey);
+  return { name: g.label, key: firstKey, icon: g.icon || first?.icon || '\uE8D9' };
 });
 
 // 最近访问（排除首页自身）
@@ -118,7 +119,7 @@ const favoritePages = computed(() =>
 );
 
 const COURSE_URL = 'https://www.criwits.top/missing';
-const LUMENGUIDE_URL = 'https://xzhnew.github.io/LumenGuide/';
+const LUMENGUIDE_URL = 'https://furry-xiyi.github.io/WinUIonWeb/';
 </script>
 
 <style scoped>
@@ -242,7 +243,7 @@ const LUMENGUIDE_URL = 'https://xzhnew.github.io/LumenGuide/';
   margin: 0;
 }
 
-/* ===== 十大篇章 ===== */
+/* ===== 九大章 ===== */
 .section-title {
   display: flex;
   align-items: center;

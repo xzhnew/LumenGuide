@@ -154,8 +154,8 @@ onBeforeUnmount(() => {
   max-width: 320px;
   padding: 4px;
   box-sizing: border-box;
-  background: var(--layer-default, var(--flyout-background, var(--card-bg-default, #ffffff)));
-  border: 1px solid var(--stroke-surface-flyout, var(--card-stroke, rgba(0, 0, 0, 0.12)));
+  background: var(--material-acrylic, rgba(250, 250, 250, 0.90));
+  border: 1px solid var(--material-acrylic-border, rgba(0, 0, 0, 0.10));
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   backdrop-filter: var(--flyout-backdrop, blur(30px));
@@ -244,7 +244,7 @@ onBeforeUnmount(() => {
 
 html.theme-dark .win-context-menu,
 .example-theme-wrapper.theme-dark .win-context-menu {
-  background: var(--layer-default, #2c2c2c);
+  background: var(--material-acrylic, rgba(40, 40, 40, 0.90));
   color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }

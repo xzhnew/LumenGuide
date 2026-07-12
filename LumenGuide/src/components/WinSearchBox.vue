@@ -43,9 +43,18 @@
       <Transition name="search-popup">
         <div
           v-if="showPopup"
+          ref="popupRef"
           class="win-search-popup"
-          :class="{ 'with-content': !!query, 'is-empty': !query }"
+          :class="{ 'with-content': !!query, 'is-empty': !query, 'nav-dropdown': !isSmallScreen }"
           :style="popupStyle">
+          <!-- 拖动把手：仅小屏（移动端底部抽屉）显示，按住上下拖动调整大小；桌面/顶部/自动模式不显示、不可移动 -->
+          <div
+            v-if="isSmallScreen"
+            class="win-search-handle"
+            role="separator"
+            aria-label="拖动以调整搜索面板大小"
+            title="拖动以调整搜索面板大小"
+            @pointerdown.prevent="startResize"></div>
           <!-- 空白态：最近访问与收藏并排 -->
           <div v-if="!query" class="win-search-empty">
             <div class="win-search-row">
@@ -148,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import WinButton from './WinButton.vue';
 import { searchPages, getPageMeta, pageGroups, type PageMeta } from '../data/pages';
 import { useFavorites } from '../composables/useFavorites';
@@ -232,8 +241,14 @@ const emit = defineEmits([
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const rootRef = ref<HTMLElement | null>(null);
+const popupRef = ref<HTMLElement | null>(null);
 const isFocused = ref(false);
 const highlightIndex = ref(0);
+// 弹窗显式高度（拖动把手时锁定，null = 由内容自动撑高）
+const popupHeight = ref<number | null>(null);
+// 是否小屏（<640px）：只有小屏（移动端底部抽屉）才允许拖拽调整大小；
+// 桌面 / 顶部 / 自动 模式均为固定下拉卡片，不可移动。与 CSS @media(max-width:640px) 断点一致。
+const isSmallScreen = ref(typeof window !== 'undefined' ? window.innerWidth < 640 : false);
 
 // Text（对标 AutoSuggestBox.Text）
 const query = computed({
@@ -247,9 +262,12 @@ watch(isFocused, (v) => emit('update:isSuggestionListOpen', v));
 
 // 弹窗位置状态（手动更新，支持 resize/scroll 实时刷新）
 const popupPos = ref({ top: '0px', left: '0px', width: '400px' });
+// 拖拽中标记：拖拽时不要被 updatePopupPos（scroll/resize 触发）覆盖用户拖动的位置
+let isResizing = false;
 
 // 计算并更新弹窗位置
 const updatePopupPos = () => {
+  if (isResizing) return; // 拖拽中：保持用户拖动的位置，不被 scroll/resize 重置
   if (!rootRef.value || !isFocused.value) return;
   const rect = rootRef.value.getBoundingClientRect();
   // 弹窗宽度与搜索框一致；小屏模式下尽量撑满，桌面端保底 320px
@@ -339,6 +357,17 @@ const flatIndexOf = (group: any, idx: number) => {
 
 const setHighlight = (i: number) => { highlightIndex.value = i; };
 
+// 高亮项随键盘上下移动时，自动滚入可见区域（列表较长时不会“跑出屏幕”）
+watch(highlightIndex, () => {
+  nextTick(() => {
+    const el = document.querySelector('.win-search-suggestion.highlighted') as HTMLElement | null;
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+});
+
+// 弹窗关闭时，重置为“内容自动撑高”（下次打开不被上次拖动的高度影响）
+watch(isFocused, (v) => { if (!v) popupHeight.value = null; });
+
 // 最近访问与收藏
 const { favorites } = useFavorites();
 const recentRefresh = ref(0);
@@ -369,11 +398,55 @@ const favoriteItems = computed(() => {
 
 const showFooter = computed(() => !!query.value);
 
-// 弹窗样式（使用 popupPos 响应式更新，并应用 MaxSuggestionHeight）
-const popupStyle = computed(() => ({
-  ...popupPos.value,
-  maxHeight: props.maxSuggestionHeight > 0 ? (props.maxSuggestionHeight + 'px') : undefined
-}));
+// 弹窗样式（使用 popupPos 响应式更新，并应用 MaxSuggestionHeight / 拖动高度）
+const popupStyle = computed(() => {
+  const base = { ...popupPos.value };
+  if (isSmallScreen.value && popupHeight.value) {
+    // 小屏拖动中：锁定高度，底边贴底由 CSS 控制，仅改高度即从底部向上撑高
+    return { ...base, height: popupHeight.value + 'px', maxHeight: '92vh' };
+  }
+  // 桌面 / 顶部 / 自动：固定下拉卡片，高度由内容撑开（封顶 70vh 由基础样式控制），不可拖拽
+  return {
+    ...base,
+    maxHeight: props.maxSuggestionHeight > 0 ? (props.maxSuggestionHeight + 'px') : undefined
+  };
+});
+
+// ===== 拖动调整弹窗大小 =====
+// 抓手在弹窗顶部：向上拖 → 弹窗变高（底边固定，顶边跟随）；向下拖 → 变矮。
+// 注意：仅小屏（移动端底部抽屉）允许拖拽；桌面/顶部/自动模式由 startResize 守卫拦截，不可移动。
+let dragStart = { y: 0, bottom: 0, height: 0 };
+
+const startResize = (e: PointerEvent) => {
+  if (!isSmallScreen.value || !popupRef.value) return; // 仅小屏可拖拽
+  const rect = popupRef.value.getBoundingClientRect();
+  dragStart = { y: e.clientY, bottom: rect.bottom, height: rect.height };
+  popupHeight.value = rect.height; // 锁定当前高度，避免首帧跳动
+  isResizing = true; // 标记拖拽中，阻止 updatePopupPos 覆盖位置
+  window.addEventListener('pointermove', onResizeMove);
+  window.addEventListener('pointerup', stopResize);
+};
+
+const onResizeMove = (e: PointerEvent) => {
+  const deltaY = e.clientY - dragStart.y;
+  const minH = 200;
+  const maxH = Math.round(window.innerHeight * 0.9);
+  let h = dragStart.height - deltaY; // 向上拖（deltaY<0）→ 变高
+  h = Math.max(minH, Math.min(maxH, h));
+  popupHeight.value = h;
+  if (!isSmallScreen.value) {
+    // 桌面：底边固定，顶边跟随拖动（并防止顶到屏幕外）
+    const newTop = Math.max(8, dragStart.bottom - h);
+    popupPos.value = { ...popupPos.value, top: newTop + 'px' };
+  }
+  // 移动端：bottom:0 由 CSS 控制，仅改高度即从底部向上撑高
+};
+
+const stopResize = () => {
+  isResizing = false; // 结束拖拽，恢复位置自动跟随
+  window.removeEventListener('pointermove', onResizeMove);
+  window.removeEventListener('pointerup', stopResize);
+};
 
 const onFocus = () => { recentRefresh.value++; isFocused.value = true; updatePopupPos(); };
 
@@ -433,6 +506,7 @@ const clearQuery = () => {
 // Ctrl+K 全局快捷键
 let globalKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 let resizeHandler: (() => void) | null = null;
+let widthChangeHandler: (() => void) | null = null;
 
 onMounted(() => {
   globalKeyHandler = (e: KeyboardEvent) => {
@@ -444,6 +518,17 @@ onMounted(() => {
     }
   };
   document.addEventListener('keydown', globalKeyHandler);
+
+  // 实时跟踪是否小屏：切换桌面/顶部/自动 ↔ 小屏时同步刷新，离开小屏时重置拖动高度
+  widthChangeHandler = () => {
+    const next = window.innerWidth < 640;
+    if (next !== isSmallScreen.value) {
+      isSmallScreen.value = next;
+      if (!next) popupHeight.value = null; // 离开小屏：丢弃曾拖动的高度
+      updatePopupPos();
+    }
+  };
+  window.addEventListener('resize', widthChangeHandler);
 
   resizeHandler = () => { updatePopupPos(); };
   watch(isFocused, (focused) => {
@@ -479,6 +564,9 @@ onBeforeUnmount(() => {
     window.removeEventListener('resize', resizeHandler);
     window.removeEventListener('scroll', resizeHandler, true);
   }
+  if (widthChangeHandler) window.removeEventListener('resize', widthChangeHandler);
+  window.removeEventListener('pointermove', onResizeMove);
+  window.removeEventListener('pointerup', stopResize);
 });
 
 defineExpose({ focus: () => inputRef.value?.focus() });
@@ -604,10 +692,10 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   z-index: 10001;
   display: flex;
   flex-direction: column;
-  background: var(--flyout-bg);
+  background: var(--material-acrylic, rgba(250, 250, 250, 0.9));
   backdrop-filter: var(--flyout-backdrop);
   -webkit-backdrop-filter: var(--flyout-backdrop);
-  border: 1px solid var(--stroke-surface-flyout);
+  border: 1px solid var(--material-acrylic-border, rgba(0, 0, 0, 0.1));
   border-radius: 8px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
   max-height: 70vh;
@@ -616,6 +704,39 @@ defineExpose({ focus: () => inputRef.value?.focus() });
 
 .win-search-popup.is-empty {
   min-height: 320px;
+}
+
+/* 桌面 / 顶部 / 自动模式：固定下拉卡片（不可拖拽）。
+   与小屏底部抽屉区分，但顶部不加任何强调色，保持纯净材质观感。 */
+.win-search-popup.nav-dropdown {
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.30);
+}
+
+/* 顶部拖动把手（桌面 / 移动通用，移动端样式见下方 media query） */
+.win-search-handle {
+  height: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  touch-action: none;
+  background: transparent;
+}
+
+.win-search-handle::after {
+  content: '';
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-tertiary);
+  opacity: 0.35;
+  transition: opacity var(--fast-duration);
+}
+
+.win-search-handle:hover::after {
+  opacity: 0.7;
 }
 
 /* 空白态 */
@@ -881,7 +1002,7 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   border-top: 1px solid var(--stroke-divider);
   font-size: 11px;
   color: var(--text-tertiary);
-  background: var(--layer-default);
+  background: transparent;
   flex-shrink: 0;
 }
 
@@ -941,10 +1062,51 @@ defineExpose({ focus: () => inputRef.value?.focus() });
 
 /* ===== 移动端适配 ===== */
 @media (max-width: 640px) {
-  /* 弹窗撑满屏幕宽度，仅留边距 */
+  /* 弹窗改为底部抽屉（bottom sheet）：全宽、贴底、统一圆角/边框/安全区，彻底消除移动端定位错乱 */
   .win-search-popup {
-    border-radius: 0 0 12px 12px;
-    max-height: 80vh;
+    top: auto !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-height: 86vh;
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* 抽屉顶部小抓手（真实手柄，桌面/移动通用） */
+  .win-search-handle {
+    height: 20px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ns-resize;
+    touch-action: none;
+    background: transparent;
+  }
+
+  .win-search-handle::after {
+    content: '';
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--text-tertiary);
+    opacity: 0.5;
+    transition: opacity var(--fast-duration);
+  }
+
+  .win-search-handle:hover::after {
+    opacity: 0.8;
+  }
+
+  /* 输入框 16px：避免 iOS Safari 点击搜索框时页面被自动放大 */
+  .win-search-input {
+    font-size: 16px;
   }
 
   /* 空白态内边距缩小 */

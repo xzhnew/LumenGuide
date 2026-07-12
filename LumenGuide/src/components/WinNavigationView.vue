@@ -39,8 +39,8 @@
       <div class="win-nav-top-search-wrap">
         <slot name="topSearch"></slot>
       </div>
-      <div class="win-nav-top-spacer"></div>
-      <!-- 底部菜单 + 设置（LeftMinimal 模式下隐藏，设置通过左面板访问） -->
+      <!-- 底部菜单 + 设置（LeftMinimal 模式下隐藏，设置通过左面板访问）。
+           紧随搜索框之后，再由 spacer 把整组推到左侧，使「设置」紧挨「搜索框」。 -->
       <div v-if="isTopNavigation" class="win-nav-menu win-nav-top-footer-menu" ref="topFooterMenuRef">
         <template v-for="item in footerItems" :key="item.value">
           <div class="win-nav-item" :class="{ 'is-selected': selectedValue === item.value }" @click="onItemClick(item)" :ref="el => setItemRef(item.value, el)">
@@ -53,6 +53,8 @@
           <span class="label">{{ settingsLabel }}</span>
         </div>
       </div>
+      <!-- spacer 放在 footer 之后：把「搜索框 + 设置」整组推到左侧，设置紧挨搜索框 -->
+      <div class="win-nav-top-spacer"></div>
       <div v-if="isTopNavigation" class="win-nav-top-measure" ref="topMeasureRef" aria-hidden="true">
         <template v-for="item in menuItems" :key="item.value">
           <div class="win-nav-item" :data-value="item.value">
@@ -1709,7 +1711,7 @@ watch(() => props.selectedValue, (val, oldVal) => {
     /* LeftMinimal 模式下，面板展开时覆盖全屏 */
     .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel:not(.is-compact) {
       width: 100%;
-      max-width: 100vw;
+      max-width: 100%;
       pointer-events: auto;
     }
 
@@ -1858,6 +1860,8 @@ watch(() => props.selectedValue, (val, oldVal) => {
     position: relative;
     width: 100%;
     height: 48px;
+    /* 刘海屏安全区：非异形屏时 env() 为 0，桌面端无影响 */
+    padding-top: env(safe-area-inset-top, 0px);
     transition: width var(--normal-duration) var(--fast-out-slow-in), background var(--normal-duration) var(--fast-out-slow-in);
     display: flex;
     align-items: center;
@@ -1866,6 +1870,28 @@ watch(() => props.selectedValue, (val, oldVal) => {
   .win-nav-top-spacer {
     flex: 1;
     min-width: 0;
+  }
+
+  /* 顶部栏 footer（设置）紧随搜索框之后；桌面模式顶栏已有 gap:8px 留出间距，
+     小屏 footer 隐藏，故无需额外 margin。 */
+  .win-nav-top-footer-menu {
+    margin-left: 0;
+    flex-shrink: 0;
+  }
+
+  /* 顶部模式（桌面，≥641px）：补齐顶栏内边距，并给搜索框一个合理宽度，
+     确保「设置」与「搜索框」都能正常显示、互不挤压（小屏规则在下方 media 内，不冲突）。 */
+  @media (min-width: 641px) {
+    .win-nav-shell.is-top .win-nav-top-bar {
+      padding: 0 12px;
+      gap: 8px;
+    }
+
+    .win-nav-shell.is-top .win-nav-top-search-wrap {
+      flex: 0 1 340px;
+      max-width: 360px;
+      min-width: 200px;
+    }
   }
 
   .win-nav-top-measure {
@@ -2226,7 +2252,7 @@ watch(() => props.selectedValue, (val, oldVal) => {
 
   .win-nav-shell.is-overlay-left .win-nav-left-panel {
     width: 100%;
-    max-width: 100vw;
+    max-width: 100%;
     padding-top: env(safe-area-inset-top, 0px);
   }
 
@@ -2327,8 +2353,15 @@ watch(() => props.selectedValue, (val, oldVal) => {
 }
 
 .win-nav-shell.is-left-minimal .win-nav-top-search-wrap {
-  flex: 1;
+  flex: 0 1 320px;
+  max-width: 360px;
   min-width: 0;
+}
+
+/* LeftMinimal（汉堡）顶栏：spacer 被隐藏，给设置按钮加 margin-left:auto 推到最右，并与搜索框留间距 */
+.win-nav-shell.is-left-minimal .win-nav-top-footer-menu {
+  margin-left: auto;
+  padding-left: 12px;
 }
 
 .win-nav-shell.is-left-minimal .win-nav-top-spacer {
@@ -2365,7 +2398,7 @@ watch(() => props.selectedValue, (val, oldVal) => {
 
   .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel {
     width: 100%;
-    max-width: 100vw;
+    max-width: 100%;
     padding-top: env(safe-area-inset-top, 0px);
   }
 }

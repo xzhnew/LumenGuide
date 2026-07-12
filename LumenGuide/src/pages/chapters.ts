@@ -1,65 +1,96 @@
 /**
- * 篇章（卷 / 章）数据 —— 位于 pages 文件夹内
+ * 篇章（章 / 节）数据 —— 位于 pages 文件夹内
  *
- * - chapterPlan：每卷自行声明卷名、图标、章标题（支持单卷单独增删章）
- * - 各章正文不再放在这里，而是写在对应的 `src/pages/Volume{n}.vue` 组件里
- *   （导航点某章 → 进入该卷页面并锚点定位到对应 <section id="ch{n}-{t}">）
+ * 设计原则：章与节 100% 由 src/content/*.md 的 frontmatter 驱动，不再需要手写任何数组。
+ *   - 某「章」是否存在 = markdownArticles 里是否出现该 chapter 值（按升序）
+ *   - 该章的显示名 / 图标 = 该章任一篇 .md 写的 chapterName / chapterIcon（可只写在一篇里）
+ *   - 该章包含哪些「节」 = markdownArticles 里 chapter 匹配的条目，按 section 升序
  *
- * 本模块仅以 type-only 方式从 ../data/pages 引入类型，运行时不构成循环依赖；
+ * 因此：
+ *   - 加一章 = 新建一篇 chapter: N 的 .md 并写 chapterName
+ *   - 删一章 = 删光该 chapter 的所有 .md
+ *   - 加一节 = 新建一篇 .md
+ *   - 删一节 = 删掉对应 .md
+ * 全程只改 .md，不用碰本文件。
+ *
+ * markdownArticles（由 scripts/build-md.mjs 生成）是文章单一数据源。
+ * 本模块从中派生：
+ *   - chapterArticles：PageMeta[]，供导航 / 首页 / 搜索 / 收藏使用
+ *   - chapterGroups：按章分组，供导航分组与首页卡片使用
+ *
  * data/pages.ts 再从本模块取值并重新导出，供 App / HomePage / 搜索等使用。
  */
 
 import type { PageMeta, PageGroup } from '../data/pages';
-import { articleContent } from '../data/articleContent';
+import { markdownArticles } from '../data/markdownArticles';
 
-
-// ========== 篇章结构：每卷自行声明包含哪几章（支持单卷单独增删章） ==========
-export interface VolumeDef {
-  name: string;        // 卷名
-  icon: string;        // 该卷在导航 / 首页显示的图标
-  chapters: string[];  // 章标题列表；长度即章数，增删章只改这里
+// ===== 中文数字（用于 第一章 / 第一节 等序号，支持 1–99） =====
+function toChineseNum(n: number): string {
+  const d = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+  if (n <= 0) return String(n);
+  if (n <= 10) return n === 10 ? '十' : d[n];
+  if (n < 20) return '十' + d[n - 10];
+  if (n < 100) {
+    const t = Math.floor(n / 10);
+    const o = n % 10;
+    return d[t] + '十' + (o ? d[o] : '');
+  }
+  return String(n);
 }
-export const chapterPlan: VolumeDef[] = [
-  { name: '第一卷 · 开箱与初见',     icon: '\uE7B8', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第二卷 · 从手机到电脑',   icon: '\uE717', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第三卷 · 第一次用电脑',   icon: '\uE897', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第四卷 · 日常使用与维护', icon: '\uE74E', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第五卷 · 安全与防护',     icon: '\uE72E', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第六卷 · 文件管理进阶',   icon: '\uE8B7', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第七卷 · 通讯与网络',     icon: '\uE715', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第八卷 · 工作与娱乐',     icon: '\uE768', chapters: ['第1章', '第2章', '第3章'] },
-  { name: '第九卷 · 故障排除思维',   icon: '\uE7BA', chapters: ['第1章', '第2章', '第3章'] },
-];
 
-// 兼容导出：卷名列表（首页九宫格 / 旧引用仍可沿用）
-export const chapterNames = chapterPlan.map(v => v.name);
+// ===== 从 markdownArticles 派生所有「章」（顶层分组） =====
+const chapterNumbers = Array.from(
+  new Set(markdownArticles.map(a => a.chapter))
+).sort((a, b) => a - b);
 
-// ========== 根据 chapterPlan 生成篇章文章元数据（每卷章数可不同） ==========
-// 注意：content 不再由这里提供，正文写在 Volume{n}.vue 中；此处仅保留
-// 标题 / 描述 / 关键词等元数据，供导航、首页、搜索、收藏使用。
+// 读取某章的显示信息（名称 / 图标），优先用 .md 的 chapterName / chapterIcon，否则回落
+function resolveChapterMeta(chapterNum: number) {
+  const all = markdownArticles.filter(a => a.chapter === chapterNum);
+  const named = all.find(a => a.chapterName);
+  const first = all[0];
+  return {
+    name: named?.chapterName || first?.chapterName || `第${toChineseNum(chapterNum)}章`,
+    icon: named?.chapterIcon || first?.chapterIcon || first?.icon || '',
+  };
+}
+
+// ===== 按章生成文章元数据（导航 / 首页 / 搜索 / 收藏） =====
 export const chapterArticles: PageMeta[] = [];
-chapterPlan.forEach((vol, i) => {
-  const n = i + 1;
-  vol.chapters.forEach((chTitle, t) => {
-    const tNum = t + 1;
-    const key = `ch${n}-${tNum}`;
-    chapterArticles.push({
-      key,
-      icon: vol.icon,
-      title: `Chapter ${n}.${tNum}`,
-      titleZh: `${vol.name} · ${chTitle}`,
-      desc: `Chapter ${n} article ${tNum}.`,
-      descZh: `《${vol.name}》${chTitle}内容。`,
-      keywords: ['chapter', '篇章', '文章', 'article', vol.name, `第${n}卷`, chTitle],
-      content: articleContent[key] || '',
+for (const cn of chapterNumbers) {
+  const cMeta = resolveChapterMeta(cn);
+  markdownArticles
+    .filter(a => a.chapter === cn)
+    .sort((a, b) => a.section - b.section)
+    .forEach(a => {
+      chapterArticles.push({
+        key: a.key,
+        icon: a.icon || cMeta.icon,
+        title: `Chapter ${cn}.${a.section}`,
+        // 导航/标题显示：第一节 开箱初体验（自动序号 + 标题）
+        titleZh: `第${toChineseNum(a.section)}节 ${a.title}`,
+        desc: a.summary,
+        descZh: a.summary,
+        keywords: [
+          'chapter', '章', '节', 'section', '文章', 'article',
+          cMeta.name, `第${toChineseNum(cn)}章`, `第${toChineseNum(a.section)}节`,
+          a.title, ...a.keywords,
+        ],
+        content: a.plainText,
+      });
     });
-  });
-});
+}
 
-// ========== 按卷分组（导航分组 / 搜索分组 / 首页卡片都由此派生） ==========
-export const chapterGroups: PageGroup[] = chapterPlan.map((vol, i) => ({
-  key: `vol${i + 1}`,
-  icon: vol.icon,
-  label: vol.name,
-  children: vol.chapters.map((_, t) => `ch${i + 1}-${t + 1}`),
-}));
+// ===== 按章分组（导航分组 / 搜索分组 / 首页卡片） =====
+// 组标签只显示章名（如「开箱与初见」），不显示「第一章」前缀。
+export const chapterGroups: PageGroup[] = chapterNumbers.map(cn => {
+  const cMeta = resolveChapterMeta(cn);
+  return {
+    key: `ch${cn}`,
+    icon: cMeta.icon,
+    label: cMeta.name,
+    children: markdownArticles
+      .filter(a => a.chapter === cn)
+      .sort((a, b) => a.section - b.section)
+      .map(a => a.key),
+  };
+});

@@ -47,60 +47,41 @@ import WinTitleBar from './components/WinTitleBar.vue';
 import WinNavigationView from './components/WinNavigationView.vue';
 import WinSearchBox from './components/WinSearchBox.vue';
 import WinContextMenu from './components/WinContextMenu.vue';
+import { i18nKey, createI18n } from './components/i18n';
 
 import HomePage from './pages/HomePage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
-import Volume1 from './pages/Volume1.vue';
-import Volume2 from './pages/Volume2.vue';
-import Volume3 from './pages/Volume3.vue';
-import Volume4 from './pages/Volume4.vue';
-import Volume5 from './pages/Volume5.vue';
-import Volume6 from './pages/Volume6.vue';
-import Volume7 from './pages/Volume7.vue';
-import Volume8 from './pages/Volume8.vue';
-import Volume9 from './pages/Volume9.vue';
-import { chapterArticles, chapterPlan } from './data/pages';
-import { useContextMenu } from './composables/useContextMenu.js';
+import ArticlePage from './pages/ArticlePage.vue';
+import { getPageMeta, chapterArticles, chapterGroups } from './data/pages';
+import { useContextMenu } from './composables/useContextMenu';
 
 // ========== 页面路由表 ==========
-// 每章 key 映射到其所属卷的 Volume 组件；同一卷多章共用一个组件，
-// App 用 :key="currentPage" 包裹会按章重挂载，组件内自动锚点定位到对应章。
-const volumeComponents = {
-  1: Volume1, 2: Volume2, 3: Volume3, 4: Volume4, 5: Volume5,
-  6: Volume6, 7: Volume7, 8: Volume8, 9: Volume9,
-};
+// 所有 ch* 文章（由 src/content/*.md 生成）统一由 ArticlePage 渲染；
+// App 用 :key="currentPage" 包裹会按章重挂载，ArticlePage 内部自动定位到文章顶部。
 const pageMap = {
   home: HomePage,
   settings: SettingsPage,
 };
 chapterArticles.forEach(p => {
-  const m = p.key.match(/^ch(\d+)-/);
-  const n = m ? parseInt(m[1], 10) : 1;
-  pageMap[p.key] = volumeComponents[n] || Volume1;
+  pageMap[p.key] = ArticlePage;
 });
 
 // ========== 左侧导航菜单 ==========
 // 9 个卷分组，每卷下挂其 chapters（来自 chapterPlan，支持单卷增删章）
-const chapterNavItems = chapterPlan.map((vol, i) => {
-  const n = i + 1;
-  const volIcon = chapterArticles.find(p => p.key === `ch${n}-1`)?.icon || '\uE8D9';
-  const children = vol.chapters.map((chTitle, t) => {
-    const key = `ch${n}-${t + 1}`;
-    const meta = chapterArticles.find(p => p.key === key);
+const chapterNavItems = chapterGroups.map(group => ({
+  value: group.key,
+  icon: group.icon,
+  label: group.label,
+  selectsOnInvoked: false,
+  children: group.children.map(key => {
+    const meta = getPageMeta(key);
     return {
       value: key,
       icon: meta?.icon || '\uE8A5',
-      label: chTitle,
+      label: meta?.titleZh || meta?.title || key,
     };
-  });
-  return {
-    value: `vol${n}`,
-    icon: volIcon,
-    label: vol.name,
-    selectsOnInvoked: false,
-    children,
-  };
-});
+  }),
+}));
 
 const navMenuItems = [
   { value: 'home', icon: '\uE80F', label: '首页' },
@@ -135,6 +116,8 @@ const animSetting = ref(readStored('winui-anim', 'entrance'));
 provide('themeSetting', themeSetting);
 provide('navPosition', navPosition);
 provide('animSetting', animSetting);
+// 注入上游 WinUIonWeb 的 i18n（合并控件内部使用），默认中文
+provide(i18nKey, createI18n('zh-CN'));
 
 watch(themeSetting, (v) => {
   localStorage.setItem('winui-theme', v);
