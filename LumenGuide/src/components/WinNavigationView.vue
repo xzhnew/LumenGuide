@@ -1084,7 +1084,7 @@ const calcIndicator = () => {
       indicatorStyle.value = { transform: `translateX(${oldX}px)`, width: '16px', opacity: '1', transition: 'none' };
       track.style.clipPath = makeClipX(targetRect, sourceRect);
       const movingRight = newX > oldX;
-      const dur = 600;
+      const dur = 300;
       const stretchW = Math.min(dist + INDICATOR_SIZE, TOP_INDICATOR_MAX_STRETCH);
       let keyframes;
       if (movingRight) {
@@ -1114,7 +1114,7 @@ const calcIndicator = () => {
       bottom: targetRect.bottom
     };
     track.style.clipPath = makeClipX(targetRect, fallbackSourceRect);
-    const collapseDur = 350; const expandDur = 350;
+    const collapseDur = 180; const expandDur = 180;
     let collapseKeyframes, expandKeyframes;
     if (movingRight) {
       collapseKeyframes = [{ transform: `translateX(${oldX}px)`, width: '16px', offset: 0, easing: EASE_COLLAPSE }, { transform: `translateX(${oldX + 16}px)`, width: '0px', offset: 1 }];
@@ -1192,7 +1192,7 @@ const calcIndicator = () => {
     if (crossLevel) {
       indicatorStyle.value = { transform: `translateY(${oldY}px)`, height: '16px', opacity: '1', transition: 'none' };
       const movingDown = newY > oldY;
-      const collapseDur = 350; const expandDur = 350;
+      const collapseDur = 180; const expandDur = 180;
       let collapseKf, expandKf;
       if (movingDown) {
         collapseKf = [{ transform: `translateY(${oldY}px)`, height: '16px', offset: 0, easing: EASE_COLLAPSE }, { transform: `translateY(${oldY + 16}px)`, height: '0px', offset: 1 }];
@@ -1218,7 +1218,7 @@ const calcIndicator = () => {
     const targetRegion = getRegion(lastSelectedEl);
     const forceMove = sourceRegion !== targetRegion;
     const useStretchMove = forceMove || dist <= 160;
-    const dur = forceMove ? 350 : 300;
+    const dur = forceMove ? 240 : 220;
     let keyframes;
 
     if (!useStretchMove) {
@@ -1228,10 +1228,10 @@ const calcIndicator = () => {
       const expandKf = movingDown
         ? [{ transform: `translateY(${newY}px)`, height: '0px', offset: 0, easing: EASE_OUT }, { transform: `translateY(${newY}px)`, height: '16px', offset: 1 }]
         : [{ transform: `translateY(${newY + 16}px)`, height: '0px', offset: 0, easing: EASE_OUT }, { transform: `translateY(${newY}px)`, height: '16px', offset: 1 }];
-      const collapseAnim = indicatorEl.animate(collapseKf, { duration: 350, fill: 'forwards' });
+      const collapseAnim = indicatorEl.animate(collapseKf, { duration: 180, fill: 'forwards' });
       collapseAnim.onfinish = () => {
         if (animationId !== indicatorAnimationId) return;
-        const expandAnim = indicatorEl.animate(expandKf, { duration: 350, fill: 'forwards' });
+        const expandAnim = indicatorEl.animate(expandKf, { duration: 180, fill: 'forwards' });
         expandAnim.onfinish = () => { if (animationId === indicatorAnimationId) snapToFinal(`translateY(${newY}px)`, 'y', '16px'); };
       };
       return;

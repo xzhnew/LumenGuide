@@ -45,7 +45,7 @@
 
 .flyout-animate {
   /* 仅淡入：不能加 transform（会废掉 .picker-flyout 等元素的 backdrop-filter 毛玻璃） */
-  animation: flyout-enter var(--fast-duration) var(--fast-out-slow-in) backwards;
+  animation: flyout-enter var(--fast-duration) var(--fast-out-slow-in) both;
   transform-origin: top center;
 }
 
@@ -135,31 +135,31 @@
 }
 
 .page-transition-up {
-  animation: page-enter-up 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
+  animation: page-enter-up 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) both;
 }
 
 .page-transition-left {
-  animation: page-enter-left 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
+  animation: page-enter-left 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) both;
 }
 
 .page-transition-right {
-  animation: page-enter-right 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
+  animation: page-enter-right 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) both;
 }
 
 .page-transition-fade {
-  animation: page-enter-fade 0.333s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
+  animation: page-enter-fade 0.333s cubic-bezier(0.1, 0.9, 0.1, 1) both;
 }
 
 .page-transition-fade-reverse {
-  animation: page-enter-fade-reverse 0.333s cubic-bezier(0.12, 0, 0, 1) backwards;
+  animation: page-enter-fade-reverse 0.333s cubic-bezier(0.12, 0, 0, 1) both;
 }
 
 .cal-slide-up-anim {
-  animation: cal-slide-up 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) backwards;
+  animation: cal-slide-up 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) both;
 }
 
 .cal-slide-down-anim {
-  animation: cal-slide-down 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) backwards;
+  animation: cal-slide-down 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) both;
 }
 
 @keyframes picker-flyout-enter {
@@ -183,12 +183,12 @@
 }
 
 .picker-flyout-animate {
-  animation: picker-flyout-enter 0.333s cubic-bezier(0.1, 0.9, 0.2, 1) backwards;
+  animation: picker-flyout-enter 0.333s cubic-bezier(0.1, 0.9, 0.2, 1) both;
   transform-origin: center center;
 }
 
 .picker-flyout-closing {
-  animation: picker-flyout-exit 0.1s cubic-bezier(0.7, 0, 1, 0.5) backwards;
+  animation: picker-flyout-exit 0.1s cubic-bezier(0.7, 0, 1, 0.5) both;
   transform-origin: center center;
 }
 
