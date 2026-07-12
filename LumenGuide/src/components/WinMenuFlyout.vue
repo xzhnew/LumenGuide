@@ -155,7 +155,7 @@ const posStyle = computed(() => {
     border: 1px solid var(--stroke-surface-flyout);
     border-radius: 8px;
     padding: 4px;
-    background: var(--material-solid);
+    background: var(--material-acrylic, rgba(250, 250, 250, 0.88));
     backdrop-filter: var(--flyout-backdrop);
     -webkit-backdrop-filter: var(--flyout-backdrop);
     min-width: 20px;

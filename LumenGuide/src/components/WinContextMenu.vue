@@ -154,7 +154,7 @@ onBeforeUnmount(() => {
   max-width: min(320px, calc(100vw - 16px));
   padding: 4px;
   box-sizing: border-box;
-  background: var(--material-solid, #fbfbfb);
+  background: var(--material-acrylic, rgba(250, 250, 250, 0.88));
   border: 1px solid var(--material-acrylic-border, rgba(0, 0, 0, 0.10));
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
@@ -244,7 +244,7 @@ onBeforeUnmount(() => {
 
 html.theme-dark .win-context-menu,
 .example-theme-wrapper.theme-dark .win-context-menu {
-  background: var(--material-solid, #2b2b2b);
+  background: var(--material-acrylic, rgba(40, 40, 40, 0.88));
   color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }

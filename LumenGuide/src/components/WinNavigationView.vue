@@ -391,9 +391,9 @@ const getTopItemsWidth = (values) => {
   return values.reduce((sum, value) => sum + measureTopItemWidth(value), 0) + (values.length - 1) * 4;
 };
 
-// 顶部模式导航项数量上限：最多显示 TOP_MAX_VISIBLE 个，给搜索框和设置按钮预留固定空间
-const TOP_MAX_VISIBLE = 7;
-
+// 顶部模式导航项数量：不再硬性限制为 7 个。
+// 搜索框与设置按钮的占位已由 topAvailableWidth 预留，宽度足够时显示全部（可 >7），
+// 宽度不足时按可用空间尽量多显示，超出的收进「更多」按钮。
 const topLayout = computed(() => {
   if (!isTopNavigation.value) {
     return { visibleValues: props.menuItems.map(item => item.value), overflowValues: [] };
@@ -403,27 +403,19 @@ const topLayout = computed(() => {
   const selectedRoot = selectedTopRootValue.value;
   const protectedValue = orderedValues.includes(selectedRoot) ? selectedRoot : null;
 
-  // 按数量上限裁剪（优先保留当前选中项所在的组/项）
-  const capVisible = (values) => {
-    let visible = values.slice(0, TOP_MAX_VISIBLE);
-    if (protectedValue && !visible.includes(protectedValue)) {
-      visible = [protectedValue, ...values.filter(v => v !== protectedValue)].slice(0, TOP_MAX_VISIBLE);
-    }
-    const visibleSet = new Set(visible);
-    return { visibleValues: visible, overflowValues: orderedValues.filter(v => !visibleSet.has(v)) };
-  };
-
   const available = topAvailableWidth.value;
+  // 宽度尚未测量（异常）：保守全部显示，overflow 逻辑兜底
   if (!Number.isFinite(available) || available <= 0) {
-    return capVisible(orderedValues);
+    return { visibleValues: orderedValues, overflowValues: [] };
   }
 
   const allWidth = getTopItemsWidth(orderedValues);
+  // 宽度足够：显示全部导航项（允许 >7 个），搜索与设置始终已被预留空间
   if (allWidth <= available) {
-    // 宽度够：仍受数量上限约束
-    return capVisible(orderedValues);
+    return { visibleValues: orderedValues, overflowValues: [] };
   }
 
+  // 宽度不足：在保留「更多」按钮空间的前提下尽量多显示，并保证当前选中项可见
   const moreReserve = topMoreButtonWidth.value + 4;
   const capacity = Math.max(0, available - moreReserve);
   let visibleValues = [];
@@ -443,16 +435,6 @@ const topLayout = computed(() => {
 
   if (protectedValue && !visibleValues.includes(protectedValue)) {
     visibleValues = [protectedValue];
-  }
-
-  // 数量上限：宽度算出之后再限制到 TOP_MAX_VISIBLE 个导航项
-  if (visibleValues.length > TOP_MAX_VISIBLE) {
-    const keep = new Set(visibleValues.slice(0, TOP_MAX_VISIBLE));
-    if (protectedValue && !keep.has(protectedValue)) {
-      keep.delete(visibleValues[TOP_MAX_VISIBLE - 1]);
-      keep.add(protectedValue);
-    }
-    visibleValues = visibleValues.filter(v => keep.has(v));
   }
 
   const visibleSet = new Set(visibleValues);
