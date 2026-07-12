@@ -52,6 +52,7 @@ import { i18nKey, createI18n } from './components/i18n';
 import HomePage from './pages/HomePage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
 import ArticlePage from './pages/ArticlePage.vue';
+import PrefacePage from './pages/PrefacePage.vue';
 import { getPageMeta, chapterArticles, chapterGroups } from './data/pages';
 import { useContextMenu } from './composables/useContextMenu';
 
@@ -61,6 +62,7 @@ import { useContextMenu } from './composables/useContextMenu';
 const pageMap = {
   home: HomePage,
   settings: SettingsPage,
+  preface: PrefacePage,
 };
 chapterArticles.forEach(p => {
   pageMap[p.key] = ArticlePage;
@@ -85,6 +87,7 @@ const chapterNavItems = chapterGroups.map(group => ({
 
 const navMenuItems = [
   { value: 'home', icon: '\uE80F', label: '首页' },
+  { value: 'preface', icon: '\uE736', label: '序言' },
   ...chapterNavItems,
 ];
 

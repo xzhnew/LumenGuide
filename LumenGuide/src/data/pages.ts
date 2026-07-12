@@ -30,6 +30,7 @@ export { chapterArticles, chapterGroups };
 // ========== 所有页面元数据（仅包含网站实际存在的页面） ==========
 export const allPages: PageMeta[] = [
   { key: 'home', icon: '\uE80F', title: 'Home', titleZh: '首页', desc: 'Project introduction and overview.', descZh: '项目介绍与概览。', keywords: ['home', 'index', 'intro', '首页', '主页', '介绍', '项目'] },
+  { key: 'preface', icon: '\uE736', title: 'Preface', titleZh: '序言', desc: 'Preface of this guide.', descZh: '本书序言：写给每一位第一次与电脑相遇的人。', keywords: ['preface', '序言', '前言', '介绍', '缘起', '为什么'] },
   { key: 'settings', icon: '\uE713', title: 'Settings', titleZh: '设置', desc: 'Site settings page.', descZh: '网站设置页面。', keywords: ['settings', 'preferences', 'theme', '设置', '偏好', '主题'] },
   ...chapterArticles,
 ];
@@ -39,7 +40,8 @@ export const pageGroups: PageGroup[] = [
   // 网站实际页面
   {
     key: 'sitepages', icon: '\uE80F', label: '网站页面', children: [
-      'home'
+      'home',
+      'preface'
     ]
   },
   ...chapterGroups,

@@ -5,12 +5,15 @@
       <button v-if="prevKey" class="chapter-nav-btn" @click="goTo(prevKey)">← 上一篇</button>
       <button v-if="nextKey" class="chapter-nav-btn" @click="goTo(nextKey)">下一篇 →</button>
     </div>
+    <!-- 版权说明（设置页除外，每一页都展示） -->
+    <WinCopyrightFooter />
   </WinPage>
 </template>
 
 <script setup lang="ts">
 import { computed, inject, onMounted, nextTick } from 'vue';
 import WinPage from '../components/WinPage.vue';
+import WinCopyrightFooter from '../components/WinCopyrightFooter.vue';
 import { getPageMeta, chapterArticles } from '../data/pages';
 import { getMarkdownArticle } from '../data/markdownArticles';
 

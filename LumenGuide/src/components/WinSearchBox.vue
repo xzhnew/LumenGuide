@@ -254,13 +254,26 @@ const isSmallScreen = ref(typeof window !== 'undefined' ? window.innerWidth < 64
 // 据此推算键盘高度，把搜索弹窗抬到键盘上方（窄于 80px 视为浏览器工具栏抖动，忽略）。
 const keyboardH = ref(0);
 
+// 小屏弹窗独立开关：与输入框焦点解耦，键盘收起后弹窗不自动关闭；
+// 关闭方式：① 向下拖拽把手超过阈值（拖出屏幕）② 弹窗/搜索框之外点击两次及以上。
+const popupOpen = ref(false);
+// 小屏拖拽状态：拖拽中禁用过渡以便实时跟随手指；释放后恢复过渡回弹
+const dragging = ref(false);
+// 小屏拖拽实时位移（px），用于把底部抽屉向下推出屏幕
+const dragOffset = ref(0);
+
 // Text（对标 AutoSuggestBox.Text）
 const query = computed({
   get: () => props.text,
   set: (v) => emit('update:text', v)
 });
 
-const showPopup = computed(() => isFocused.value || props.isSuggestionListOpen);
+const showPopup = computed(() => {
+  // 小屏：弹窗显隐由 popupOpen 独立控制（与输入框焦点解耦），键盘收起也不关闭
+  if (isSmallScreen.value) return popupOpen.value || props.isSuggestionListOpen;
+  // 桌面 / 顶部 / 自动：聚焦即展开，失焦即收起
+  return isFocused.value || props.isSuggestionListOpen;
+});
 
 watch(isFocused, (v) => emit('update:isSuggestionListOpen', v));
 
@@ -381,6 +394,11 @@ watch(highlightIndex, () => {
 // 弹窗关闭时，重置为“内容自动撑高”（下次打开不被上次拖动的高度影响）
 watch(isFocused, (v) => { if (!v) popupHeight.value = null; });
 
+// 弹窗（小屏 popupOpen）关闭时，清理拖拽/点击计数状态
+watch(popupOpen, (v) => {
+  if (!v) { popupHeight.value = null; dragOffset.value = 0; outsideTapCount = 0; }
+});
+
 // 最近访问与收藏
 const { favorites } = useFavorites();
 const recentRefresh = ref(0);
@@ -411,14 +429,19 @@ const favoriteItems = computed(() => {
 
 const showFooter = computed(() => !!query.value);
 
-// 弹窗样式（使用 popupPos 响应式更新，并应用 MaxSuggestionHeight / 拖动高度）
+// 弹窗样式（使用 popupPos 响应式更新，并应用 MaxSuggestionHeight / 拖动高度 / 键盘抬升）
 const popupStyle = computed(() => {
   const base = { ...popupPos.value };
   const kb = keyboardH.value;
+  const isSmall = isSmallScreen.value;
+  const style: Record<string, string> = { ...base };
+  // 小屏拖拽中：实时跟随手指（禁用过渡），并随向下拖拽把抽屉推出屏幕
+  if (isSmall && dragging.value) style.transition = 'none';
+  if (isSmall && dragOffset.value > 0) style.transform = `translateY(${dragOffset.value}px)`;
   // 小屏 + 键盘升起：把弹窗抬到键盘上方（底边贴键盘顶沿），
   // 有搜索结果时只显示一条（正好在键盘上方），空白态则按可用空间自适应。
-  if (isSmallScreen.value && kb > 80) {
-    const style: Record<string, string> = { ...base, '--kb-offset': kb + 'px' };
+  if (isSmall && kb > 80) {
+    style['--kb-offset'] = kb + 'px';
     if (query.value && flatSuggestions.value.length) {
       // 仅显示一条搜索结果（把手 ~20 + 一条结果 ~76 + 上下内边距）
       const compactH = 104;
@@ -430,21 +453,21 @@ const popupStyle = computed(() => {
     }
     return style;
   }
-  if (isSmallScreen.value && popupHeight.value) {
-    // 小屏拖动中：锁定高度，底边贴底由 CSS 控制，仅改高度即从底部向上撑高
-    return { ...base, height: popupHeight.value + 'px', maxHeight: '92vh' };
+  if (isSmall && popupHeight.value) {
+    // 小屏（桌面模式回退）锁定高度，底边贴底由 CSS 控制，仅改高度即从底部向上撑高
+    return { ...style, height: popupHeight.value + 'px', maxHeight: '92vh' };
   }
   // 桌面 / 顶部 / 自动：固定下拉卡片，高度由内容撑开（封顶 70vh 由基础样式控制），不可拖拽
-  return {
-    ...base,
-    maxHeight: props.maxSuggestionHeight > 0 ? (props.maxSuggestionHeight + 'px') : undefined
-  };
+  if (props.maxSuggestionHeight > 0) style.maxHeight = props.maxSuggestionHeight + 'px';
+  return style;
 });
 
 // ===== 拖动调整弹窗大小 =====
 // 抓手在弹窗顶部：向上拖 → 弹窗变高（底边固定，顶边跟随）；向下拖 → 变矮。
 // 注意：仅小屏（移动端底部抽屉）允许拖拽；桌面/顶部/自动模式由 startResize 守卫拦截，不可移动。
 let dragStart = { y: 0, bottom: 0, height: 0 };
+// 小屏：弹窗之外的点击计数（点两次才算关闭，避免第一次点击只是收起软键盘）
+let outsideTapCount = 0;
 
 const startResize = (e: PointerEvent) => {
   if (!isSmallScreen.value || !popupRef.value) return; // 仅小屏可拖拽
@@ -452,12 +475,22 @@ const startResize = (e: PointerEvent) => {
   dragStart = { y: e.clientY, bottom: rect.bottom, height: rect.height };
   popupHeight.value = rect.height; // 锁定当前高度，避免首帧跳动
   isResizing = true; // 标记拖拽中，阻止 updatePopupPos 覆盖位置
+  dragging.value = true;
+  dragOffset.value = 0;
+  outsideTapCount = 0;
   window.addEventListener('pointermove', onResizeMove);
   window.addEventListener('pointerup', stopResize);
 };
 
 const onResizeMove = (e: PointerEvent) => {
   const deltaY = e.clientY - dragStart.y;
+  // 移动端底部抽屉：向下拖拽 = 拖出屏幕关闭（实时位移反馈），向上拖无效
+  if (isSmallScreen.value) {
+    dragOffset.value = deltaY > 0 ? deltaY : 0;
+    if (deltaY > 96) closePopup(); // 向下拖过阈值即关闭
+    return;
+  }
+  // 桌面：向上拖 → 变高，底边固定、顶边跟随
   const minH = 200;
   const maxH = Math.round(window.innerHeight * 0.9);
   let h = dragStart.height - deltaY; // 向上拖（deltaY<0）→ 变高
@@ -468,16 +501,40 @@ const onResizeMove = (e: PointerEvent) => {
     const newTop = Math.max(8, dragStart.bottom - h);
     popupPos.value = { ...popupPos.value, top: newTop + 'px' };
   }
-  // 移动端：bottom:0 由 CSS 控制，仅改高度即从底部向上撑高
 };
 
 const stopResize = () => {
-  isResizing = false; // 结束拖拽，恢复位置自动跟随
+  // 移动端：未达关闭阈值则弹回底部（过渡由 base 样式提供）
+  if (isSmallScreen.value && dragOffset.value > 0 && popupOpen.value) {
+    dragging.value = false;
+    requestAnimationFrame(() => { dragOffset.value = 0; });
+  }
+  isResizing = false;
+  dragging.value = false;
   window.removeEventListener('pointermove', onResizeMove);
   window.removeEventListener('pointerup', stopResize);
 };
 
-const onFocus = () => { recentRefresh.value++; isFocused.value = true; updatePopupPos(); };
+// 关闭弹窗（小屏）：重置所有拖拽/焦点状态并收起键盘
+const closePopup = () => {
+  popupOpen.value = false;
+  dragging.value = false;
+  dragOffset.value = 0;
+  isResizing = false;
+  outsideTapCount = 0;
+  inputRef.value?.blur();
+  window.removeEventListener('pointermove', onResizeMove);
+  window.removeEventListener('pointerup', stopResize);
+};
+
+const onFocus = () => {
+  recentRefresh.value++;
+  isFocused.value = true;
+  popupOpen.value = true; // 小屏：弹窗打开（与焦点解耦，键盘收起不关闭）
+  outsideTapCount = 0;
+  dragOffset.value = 0;
+  updatePopupPos();
+};
 
 const onBlur = () => {
   setTimeout(() => { isFocused.value = false; }, 150);
@@ -495,7 +552,8 @@ const onKeydown = (e: KeyboardEvent) => {
     submitQuery(); // 回车 = 点击 QueryIcon 按钮
   } else if (e.key === 'Escape') {
     e.preventDefault();
-    inputRef.value?.blur();
+    if (isSmallScreen.value) closePopup(); // 小屏：Esc 直接关闭弹窗
+    else inputRef.value?.blur();
   }
 };
 
@@ -508,6 +566,7 @@ const chooseSuggestion = (item: PageMeta) => {
   // UpdateTextOnSelect —— 选中后是否把文本写回输入框
   query.value = props.updateTextOnSelect ? (item.titleZh || item.title || '') : '';
   emit('querySubmitted', { queryText: query.value, chosenSuggestion: item });
+  if (isSmallScreen.value) popupOpen.value = false; // 小屏：选中后关闭弹窗
   isFocused.value = false;
   inputRef.value?.blur();
 };
@@ -522,6 +581,7 @@ const submitQuery = () => {
     chooseSuggestion(item);
   } else {
     emit('querySubmitted', { queryText: query.value, chosenSuggestion: null });
+    if (isSmallScreen.value) popupOpen.value = false;
     isFocused.value = false;
     inputRef.value?.blur();
   }
@@ -530,6 +590,19 @@ const submitQuery = () => {
 const clearQuery = () => {
   query.value = '';
   inputRef.value?.focus();
+};
+
+// 小屏：监听全局 pointerdown，统计弹窗/搜索框之外的点击次数（点两次才关闭）
+const onDocPointerDown = (e: PointerEvent) => {
+  if (!isSmallScreen.value || !popupOpen.value) return;
+  const t = e.target as HTMLElement;
+  // 点在弹窗内部或搜索框内部：不算“外部点击”，计数器清零
+  if (popupRef.value?.contains(t) || rootRef.value?.contains(t)) {
+    outsideTapCount = 0;
+    return;
+  }
+  outsideTapCount += 1;
+  if (outsideTapCount >= 2) closePopup();
 };
 
 // Ctrl+K 全局快捷键
@@ -547,6 +620,9 @@ onMounted(() => {
     }
   };
   document.addEventListener('keydown', globalKeyHandler);
+
+  // 小屏：全局监听“弹窗外点击”，用于两次点击关闭弹窗
+  document.addEventListener('pointerdown', onDocPointerDown);
 
   // 实时跟踪是否小屏：切换桌面/顶部/自动 ↔ 小屏时同步刷新，离开小屏时重置拖动高度
   widthChangeHandler = () => {
@@ -595,6 +671,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (globalKeyHandler) document.removeEventListener('keydown', globalKeyHandler);
+  document.removeEventListener('pointerdown', onDocPointerDown);
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);
     window.removeEventListener('scroll', resizeHandler, true);
@@ -739,6 +816,8 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
   max-height: 70vh;
   overflow: hidden;
+  /* 小屏拖拽释放后回弹到底部的过渡（拖拽中由内联 transition:none 覆盖） */
+  transition: transform 0.2s ease;
 }
 
 .win-search-popup.is-empty {
