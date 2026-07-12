@@ -758,7 +758,7 @@ html.theme-dark {
       无法显示毛玻璃材质 → 退回「完全不透明实色 --material-solid」（即用户认可的旧设置），绝不透底。 */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .win-context-menu,
-  .win-context-menu-surface,
+  .win-context-menu-panel,
   .win-search-popup,
   .win-menu-flyout,
   .win-combo-flyout,
@@ -781,7 +781,7 @@ html.theme-dark {
 /* 2) 用户开启系统「降低透明度」(prefers-reduced-transparency)：统一实色兜底（尊重系统偏好） */
 @media (prefers-reduced-transparency: reduce) {
   .win-context-menu,
-  .win-context-menu-surface,
+  .win-context-menu-panel,
   .win-search-popup,
   .win-menu-flyout,
   .win-combo-flyout,

@@ -7,7 +7,7 @@
       class="win-context-menu"
       :style="posStyle"
       @contextmenu.prevent>
-      <div class="win-context-menu-surface">
+      <div class="win-context-menu-panel">
       <div v-for="(item, i) in items" :key="i">
         <div
           v-if="item.kind === 'separator'"
@@ -153,10 +153,10 @@ onBeforeUnmount(() => {
   position: fixed;
   z-index: 10010;
   font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  /* 外层只负责定位：绝不能加 transform 或带 transform 的 animation，否则会废掉内层 .win-context-menu-surface 的 backdrop-filter 毛玻璃 */
+  /* 外层只负责定位：绝不能加 transform 或带 transform 的 animation，否则会废掉内层 .win-context-menu-panel 的 backdrop-filter 毛玻璃 */
 }
 
-.win-context-menu-surface {
+.win-context-menu-panel {
   min-width: 200px;
   max-width: min(320px, calc(100vw - 16px));
   padding: 4px;
@@ -249,8 +249,8 @@ onBeforeUnmount(() => {
   margin: 4px 8px;
 }
 
-html.theme-dark .win-context-menu-surface,
-.example-theme-wrapper.theme-dark .win-context-menu-surface {
+html.theme-dark .win-context-menu-panel,
+.example-theme-wrapper.theme-dark .win-context-menu-panel {
   background: var(--material-acrylic, rgba(40, 40, 40, 0.88));
   color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
