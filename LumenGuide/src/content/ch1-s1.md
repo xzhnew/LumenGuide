@@ -2,7 +2,8 @@
 chapter: 1
 section: 1
 title: 开箱初体验
-icon: ""
+icon: 'uE138'
+chapterIcon: 'uE721'
 chapterName: "开箱与初见"
 summary: 第一次把电脑抱回家，先别急着开机。认识外观、接口与配件，心里才有底。
 keywords: [开箱, 电脑, 新手, 外观, 接口, 配件]

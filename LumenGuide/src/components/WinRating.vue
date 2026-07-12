@@ -2,7 +2,7 @@
   <div class="win-rating" :class="{ 'disabled': disabled }" @mouseleave="!disabled && (hoverIdx = -1)">
     <span v-for="i in max" :key="i" class="icon" :class="{ 'active': i <= (hoverIdx === -1 ? modelValue : hoverIdx) }"
           @mouseenter="!disabled && (hoverIdx = i)" @click="!disabled && $emit('update:modelValue', i)">
-      {{ i <= (hoverIdx === -1 ? modelValue : hoverIdx) ? '&#xE735;' : '&#xE734;' }}
+      {{ i <= (hoverIdx === -1 ? modelValue : hoverIdx) ? '\uE735' : '\uE734' }}
     </span>
   </div>
 </template>

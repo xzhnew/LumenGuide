@@ -3,6 +3,7 @@ chapter: 6
 section: 1
 title: 从哪里下载软件
 icon: "\uE71D"
+chapterIcon: 'uE7F4'
 chapterName: "安装与卸载软件"
 summary: 软件要去对的地方下。认准官网和正规商店，远离“高速下载”陷阱，电脑才安全。
 keywords: [下载软件, 官网, 应用商店, 软件, 安全下载]

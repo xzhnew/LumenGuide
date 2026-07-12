@@ -3,6 +3,7 @@ chapter: 3
 section: 1
 title: 桌面上有什么
 icon: "\uE7F4"
+chapterIcon: 'uE71D'
 chapterName: "桌面与开始菜单"
 summary: 桌面、图标、任务栏各自负责什么？先认识这个你每天都会面对的“工作台”。
 keywords: [桌面, 图标, 任务栏, 壁纸, 入门, 界面]

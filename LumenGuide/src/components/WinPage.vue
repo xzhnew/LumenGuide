@@ -19,7 +19,7 @@
           @click.stop="toggleFav"
           style="width: 32px; height: 32px; padding: 0; min-width: 0;"
           :aria-label="isFavoriteState ? '取消收藏' : '添加收藏'">
-          <span class="icon">{{ isFavoriteState ? '&#xE735;' : '&#xE734;' }}</span>
+          <span class="icon">{{ isFavoriteState ? '\uE735' : '\uE734' }}</span>
         </WinToggleButton>
       </div>
     </div>

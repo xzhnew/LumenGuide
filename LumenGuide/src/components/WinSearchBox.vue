@@ -250,6 +250,10 @@ const popupHeight = ref<number | null>(null);
 // 桌面 / 顶部 / 自动 模式均为固定下拉卡片，不可移动。与 CSS @media(max-width:640px) 断点一致。
 const isSmallScreen = ref(typeof window !== 'undefined' ? window.innerWidth < 640 : false);
 
+// 虚拟视口（VisualViewport）：移动端键盘唤起时，visualViewport 高度会缩小，
+// 据此推算键盘高度，把搜索弹窗抬到键盘上方（窄于 80px 视为浏览器工具栏抖动，忽略）。
+const keyboardH = ref(0);
+
 // Text（对标 AutoSuggestBox.Text）
 const query = computed({
   get: () => props.text,
@@ -306,6 +310,15 @@ const updatePopupPos = () => {
       width: popupWidth + 'px'
     };
   }
+};
+
+// 移动端键盘高度推算：keyboardH = 视口底部以下被遮挡的部分（≈键盘高度）
+const onVVResize = () => {
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+  if (!vv) return;
+  const kh = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+  keyboardH.value = kh;
+  if (isFocused.value) updatePopupPos();
 };
 
 const suggestions = ref<PageMeta[]>([]);
@@ -401,6 +414,22 @@ const showFooter = computed(() => !!query.value);
 // 弹窗样式（使用 popupPos 响应式更新，并应用 MaxSuggestionHeight / 拖动高度）
 const popupStyle = computed(() => {
   const base = { ...popupPos.value };
+  const kb = keyboardH.value;
+  // 小屏 + 键盘升起：把弹窗抬到键盘上方（底边贴键盘顶沿），
+  // 有搜索结果时只显示一条（正好在键盘上方），空白态则按可用空间自适应。
+  if (isSmallScreen.value && kb > 80) {
+    const style: Record<string, string> = { ...base, '--kb-offset': kb + 'px' };
+    if (query.value && flatSuggestions.value.length) {
+      // 仅显示一条搜索结果（把手 ~20 + 一条结果 ~76 + 上下内边距）
+      const compactH = 104;
+      style.height = compactH + 'px';
+      style.maxHeight = compactH + 'px';
+    } else {
+      // 空白态（最近访问/收藏）：限制最大高度不超出键盘上方可用区域
+      style.maxHeight = Math.max(140, window.innerHeight - kb - 12) + 'px';
+    }
+    return style;
+  }
   if (isSmallScreen.value && popupHeight.value) {
     // 小屏拖动中：锁定高度，底边贴底由 CSS 控制，仅改高度即从底部向上撑高
     return { ...base, height: popupHeight.value + 'px', maxHeight: '92vh' };
@@ -530,6 +559,12 @@ onMounted(() => {
   };
   window.addEventListener('resize', widthChangeHandler);
 
+  // 键盘检测：监听 VisualViewport 变化（键盘唤起/收起），实时把弹窗抬到键盘上方
+  if (typeof window !== 'undefined' && window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onVVResize);
+    window.visualViewport.addEventListener('scroll', onVVResize);
+  }
+
   resizeHandler = () => { updatePopupPos(); };
   watch(isFocused, (focused) => {
     if (focused) {
@@ -565,6 +600,10 @@ onBeforeUnmount(() => {
     window.removeEventListener('scroll', resizeHandler, true);
   }
   if (widthChangeHandler) window.removeEventListener('resize', widthChangeHandler);
+  if (typeof window !== 'undefined' && window.visualViewport) {
+    window.visualViewport.removeEventListener('resize', onVVResize);
+    window.visualViewport.removeEventListener('scroll', onVVResize);
+  }
   window.removeEventListener('pointermove', onResizeMove);
   window.removeEventListener('pointerup', stopResize);
 });
@@ -1067,7 +1106,8 @@ defineExpose({ focus: () => inputRef.value?.focus() });
     top: auto !important;
     left: 0 !important;
     right: auto !important;
-    bottom: 0 !important;
+    /* 键盘升起时通过 --kb-offset 把弹窗抬到键盘上方（由 JS 实时设置） */
+    bottom: var(--kb-offset, 0px) !important;
     width: 100% !important;
     max-height: 86vh;
     border-radius: 16px 16px 0 0;

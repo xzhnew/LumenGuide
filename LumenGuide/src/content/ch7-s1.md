@@ -3,6 +3,7 @@ chapter: 7
 section: 1
 title: 学会打字
 icon: "\uE7F4"
+chapterIcon: 'uE72E'
 chapterName: "打字与办公"
 summary: 先搞定输入法和指法。会打字，写文章、聊天、搜东西都快。中文用拼音，英文练盲打。
 keywords: [输入法, 拼音, 打字, 指法, 中文, 键盘]

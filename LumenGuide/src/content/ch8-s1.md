@@ -3,6 +3,7 @@ chapter: 8
 section: 1
 title: 打开设置
 icon: "\uE713"
+chapterIcon: 'uE80F'
 chapterName: "系统设置与个性化"
 summary: 设置是电脑的“控制面板”。网络、显示、账户、更新都从这进。先找到它，再慢慢调。
 keywords: [设置, 控制面板, Win+I, 系统, 个性化, 入口]

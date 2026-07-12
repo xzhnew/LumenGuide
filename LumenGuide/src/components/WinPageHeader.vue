@@ -16,7 +16,7 @@
       :title="isFavorite ? 'Remove from favorites' : 'Add to favorites'"
       @update:modelValue="$emit('favorite-toggle')"
       style="width: 32px; height: 32px; padding: 0; min-width: 0;">
-      <span class="icon">{{ isFavorite ? '&#xE735;' : '&#xE734;' }}</span>
+      <span class="icon">{{ isFavorite ? '\uE735' : '\uE734' }}</span>
     </WinToggleButton>
   </div>
 </template>

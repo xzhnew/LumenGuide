@@ -3,6 +3,7 @@ chapter: 9
 section: 1
 title: 密码与账号安全
 icon: "\uE72E"
+chapterIcon: 'uE774'
 chapterName: "安全与日常维护"
 summary: 账号是你网上的“家门”。好密码 + 不重复 + 不泄露，是最便宜也最有效的安全。
 keywords: [密码, 账号安全, 强密码, 钓鱼, 验证码, 安全]

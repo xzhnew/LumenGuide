@@ -3,6 +3,7 @@ chapter: 4
 section: 1
 title: 文件、文件夹与盘符
 icon: "\uE8B7"
+chapterIcon: 'uE8B1'
 chapterName: "文件与文件夹"
 summary: 电脑里的东西不是“聊天记录”，而是“文件”和“文件夹”。先搞懂这套组织方式，才算真正会用电脑。
 keywords: [文件, 文件夹, 盘符, C盘, D盘, 资源管理器]

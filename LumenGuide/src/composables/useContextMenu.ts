@@ -85,11 +85,11 @@ export function useContextMenu(options: ContextMenuOptions): ContextMenuApi {
     const items: ContextMenuItem[] = [];
 
     if (isTextTarget) {
-      items.push({ key: 'cut', label: '剪切', icon: '', shortcut: 'Ctrl+X', disabled: !hasSelection });
-      items.push({ key: 'copy', label: '复制', icon: '', shortcut: 'Ctrl+C', disabled: !hasSelection });
-      items.push({ key: 'paste', label: '粘贴', icon: '', shortcut: 'Ctrl+V' });
-      items.push({ key: 'undo', label: '撤回', icon: '', shortcut: 'Ctrl+Z' });
-      items.push({ key: 'select-all', label: '全选', icon: '', shortcut: 'Ctrl+A' });
+      items.push({ key: 'cut', label: '剪切', icon: '\uE8C6', shortcut: 'Ctrl+X', disabled: !hasSelection });
+      items.push({ key: 'copy', label: '复制', icon: '\uE8C8', shortcut: 'Ctrl+C', disabled: !hasSelection });
+      items.push({ key: 'paste', label: '粘贴', icon: '\uE77F', shortcut: 'Ctrl+V' });
+      items.push({ key: 'undo', label: '撤回', icon: '\uE7A7', shortcut: 'Ctrl+Z' });
+      items.push({ key: 'select-all', label: '全选', icon: '\uE8B3', shortcut: 'Ctrl+A' });
       items.push({ key: 'separator-edit', kind: 'separator' });
     }
 
@@ -98,28 +98,28 @@ export function useContextMenu(options: ContextMenuOptions): ContextMenuApi {
       items.push({
         key: 'toggle-fav',
         label: fav ? '取消收藏' : '收藏此章节',
-        icon: fav ? '' : '',
+        icon: fav ? '\uE735' : '\uE734',
       });
       items.push({ key: 'separator-fav', kind: 'separator' });
     }
 
-    items.push({ key: 'back-home', label: '返回首页', icon: '' });
-    items.push({ key: 'back-top', label: '回到顶部', icon: '' });
-    items.push({ key: 'refresh', label: '刷新此页', icon: '', shortcut: 'F5' });
+    items.push({ key: 'back-home', label: '返回首页', icon: '\uE80F' });
+    items.push({ key: 'back-top', label: '回到顶部', icon: '\uE74A' });
+    items.push({ key: 'refresh', label: '刷新此页', icon: '\uE72C', shortcut: 'F5' });
 
     items.push({ key: 'separator-nav', kind: 'separator' });
 
     const themeLabel = themeSetting.value === 'light' ? '切换到深色主题'
       : themeSetting.value === 'dark' ? '跟随系统主题'
         : '切换到浅色主题';
-    const themeIcon = themeSetting.value === 'light' ? ''
-      : themeSetting.value === 'dark' ? ''
-        : '';
+    const themeIcon = themeSetting.value === 'light' ? '\uE708'
+      : themeSetting.value === 'dark' ? '\uE7E8'
+        : '\uE793';
     items.push({ key: 'toggle-theme', label: themeLabel, icon: themeIcon });
 
     items.push({ key: 'separator-theme', kind: 'separator' });
 
-    items.push({ key: 'settings', label: '设置', icon: '' });
+    items.push({ key: 'settings', label: '设置', icon: '\uE713' });
 
     return items;
   };

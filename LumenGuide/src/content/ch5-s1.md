@@ -3,6 +3,7 @@ chapter: 5
 section: 1
 title: 浏览器与网址
 icon: "\uE774"
+chapterIcon: 'uE8B7'
 chapterName: "上网与浏览器"
 summary: 浏览器是通往互联网的“窗户”，网址是网站的“门牌号”。先认识它们，上网不再迷路。
 keywords: [浏览器, 网址, 网址栏, 标签页, 上网, 网页]
