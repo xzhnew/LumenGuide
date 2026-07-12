@@ -831,7 +831,7 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   z-index: 10001;
   display: flex;
   flex-direction: column;
-  background: var(--material-acrylic, rgba(250, 250, 250, 0.88));
+  background: var(--material-solid, #FBFBFB);
   backdrop-filter: var(--flyout-backdrop);
   -webkit-backdrop-filter: var(--flyout-backdrop);
   border: 1px solid var(--material-acrylic-border, rgba(0, 0, 0, 0.1));
