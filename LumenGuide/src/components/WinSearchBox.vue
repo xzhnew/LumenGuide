@@ -9,7 +9,8 @@
       <input
         ref="inputRef"
         class="win-search-input"
-        type="text"
+        type="search"
+        enterkeyhint="search"
         :placeholder="placeholderText"
         v-model="query"
         @focus="onFocus"
@@ -582,15 +583,21 @@ const chooseSuggestion = (item: PageMeta) => {
 
 /**
  * QuerySubmitted（无 chosenSuggestion）
- * 回车或点击 QueryIcon 按钮：提交当前高亮项，或仅提交文本
+ * 回车 / 搜索键 / 点击 QueryIcon 按钮：提交当前高亮项，或仅提交文本
+ * 移动端特殊处理：搜索键只收起软键盘，保留搜索面板与已输入内容，不跳转、不清除——
+ * 解决「手机上按换行键后直接跳走、搜索内容丢失」的问题（type=search 让键盘键显示为「搜索」）。
  */
 const submitQuery = () => {
+  // 移动端：收起键盘、保留搜索面板与内容，不退出、不清除
+  if (isSmallScreen.value) {
+    inputRef.value?.blur();
+    return;
+  }
   const item = flatSuggestions.value[highlightIndex.value];
   if (item) {
     chooseSuggestion(item);
   } else {
     emit('querySubmitted', { queryText: query.value, chosenSuggestion: null });
-    if (isSmallScreen.value) popupOpen.value = false;
     isFocused.value = false;
     inputRef.value?.blur();
   }
@@ -756,6 +763,13 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   color: var(--text-primary);
   min-width: 0;
   line-height: 1.4;
+}
+
+/* 隐藏 type=search 自带的圆形清除按钮（已有自定义清除按钮） */
+.win-search-input::-webkit-search-cancel-button,
+.win-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .win-search-input::placeholder {
