@@ -153,8 +153,7 @@ onBeforeUnmount(() => {
   position: fixed;
   z-index: 10010;
   font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  /* transform 动画只放外层；模糊材质在内层 .win-context-menu-surface，避免自身 transform 废掉 backdrop-filter */
-  animation: ctxmenu-in 140ms cubic-bezier(0.1, 0.9, 0.2, 1) both;
+  /* 外层只负责定位：绝不能加 transform 或带 transform 的 animation，否则会废掉内层 .win-context-menu-surface 的 backdrop-filter 毛玻璃 */
 }
 
 .win-context-menu-surface {
@@ -168,6 +167,8 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   backdrop-filter: var(--flyout-backdrop, blur(30px));
   -webkit-backdrop-filter: var(--flyout-backdrop, blur(30px));
+  /* 入场只做淡入（opacity 不会破坏 backdrop-filter）；不放 transform，避免自身毛玻璃失效 */
+  animation: ctxmenu-in 140ms cubic-bezier(0.1, 0.9, 0.2, 1);
 }
 
 .win-context-menu.is-closing {
@@ -176,8 +177,8 @@ onBeforeUnmount(() => {
 }
 
 @keyframes ctxmenu-in {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes ctxmenu-out {

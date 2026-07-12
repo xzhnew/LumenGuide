@@ -444,12 +444,12 @@ defineExpose({ showAt, hide, openAt, isOpen });
 }
 
 @keyframes cbf-open-down {
-  from { clip-path: inset(0 0 calc(100% - 1px) 0); transform: translateY(-8px); }
-  to { clip-path: inset(0); transform: translateY(0); }
+  from { clip-path: inset(0 0 calc(100% - 1px) 0); }
+  to { clip-path: inset(0); }
 }
 
 @keyframes cbf-open-up {
-  from { clip-path: inset(calc(100% - 1px) 0 0 0); transform: translateY(8px); }
-  to { clip-path: inset(0); transform: translateY(0); }
+  from { clip-path: inset(calc(100% - 1px) 0 0 0); }
+  to { clip-path: inset(0); }
 }
 </style>

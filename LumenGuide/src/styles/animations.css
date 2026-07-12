@@ -36,17 +36,16 @@
 @keyframes flyout-enter {
   from {
     opacity: 0;
-    transform: translateY(-4px) scaleY(-1);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scaleY(1);
   }
 }
 
 .flyout-animate {
-  animation: flyout-enter var(--fast-duration) var(--fast-out-slow-in) both;
+  /* 仅淡入：不能加 transform（会废掉 .picker-flyout 等元素的 backdrop-filter 毛玻璃） */
+  animation: flyout-enter var(--fast-duration) var(--fast-out-slow-in) backwards;
   transform-origin: top center;
 }
 
@@ -136,64 +135,60 @@
 }
 
 .page-transition-up {
-  animation: page-enter-up 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) both;
+  animation: page-enter-up 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
 }
 
 .page-transition-left {
-  animation: page-enter-left 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) both;
+  animation: page-enter-left 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
 }
 
 .page-transition-right {
-  animation: page-enter-right 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) both;
+  animation: page-enter-right 0.450s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
 }
 
 .page-transition-fade {
-  animation: page-enter-fade 0.333s cubic-bezier(0.1, 0.9, 0.1, 1) both;
+  animation: page-enter-fade 0.333s cubic-bezier(0.1, 0.9, 0.1, 1) backwards;
 }
 
 .page-transition-fade-reverse {
-  animation: page-enter-fade-reverse 0.333s cubic-bezier(0.12, 0, 0, 1) both;
+  animation: page-enter-fade-reverse 0.333s cubic-bezier(0.12, 0, 0, 1) backwards;
 }
 
 .cal-slide-up-anim {
-  animation: cal-slide-up 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+  animation: cal-slide-up 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) backwards;
 }
 
 .cal-slide-down-anim {
-  animation: cal-slide-down 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+  animation: cal-slide-down 0.450s cubic-bezier(0.1, 0.9, 0.2, 1) backwards;
 }
 
 @keyframes picker-flyout-enter {
   from {
     opacity: 0;
-    transform: scaleY(0.94);
   }
 
   to {
     opacity: 1;
-    transform: scaleY(1);
   }
 }
 
 @keyframes picker-flyout-exit {
   from {
     opacity: 1;
-    transform: scaleY(1);
   }
 
   to {
     opacity: 0;
-    transform: scaleY(0.94);
   }
 }
 
 .picker-flyout-animate {
-  animation: picker-flyout-enter 0.333s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+  animation: picker-flyout-enter 0.333s cubic-bezier(0.1, 0.9, 0.2, 1) backwards;
   transform-origin: center center;
 }
 
 .picker-flyout-closing {
-  animation: picker-flyout-exit 0.1s cubic-bezier(0.7, 0, 1, 0.5) both;
+  animation: picker-flyout-exit 0.1s cubic-bezier(0.7, 0, 1, 0.5) backwards;
   transform-origin: center center;
 }
 

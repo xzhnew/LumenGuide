@@ -220,32 +220,21 @@ defineExpose({ show, hide, toggle, visible });
   opacity: 0;
 }
 
-.flyout-anim-down-enter-from.align-left {
-  transform: scaleY(0.9) translateY(-4px);
-}
-
-.flyout-anim-down-enter-from.align-center {
-  transform: scaleY(0.9) translateY(-4px);
-}
-
+/* 仅淡入，不加 transform —— .win-flyout 自身带 backdrop-filter，transform 会废掉毛玻璃 */
+.flyout-anim-down-enter-from.align-left,
+.flyout-anim-down-enter-from.align-center,
 .flyout-anim-down-enter-from.align-right {
-  transform: scaleY(0.9) translateY(-4px);
+  /* opacity-only */
 }
 
 .flyout-anim-down-leave-to {
   opacity: 0;
 }
 
-.flyout-anim-down-leave-to.align-left {
-  transform: scaleY(0.9) translateY(-4px);
-}
-
-.flyout-anim-down-leave-to.align-center {
-  transform: scaleY(0.9) translateY(-4px);
-}
-
+.flyout-anim-down-leave-to.align-left,
+.flyout-anim-down-leave-to.align-center,
 .flyout-anim-down-leave-to.align-right {
-  transform: scaleY(0.9) translateY(-4px);
+  /* opacity-only */
 }
 
 /* 向上弹出动画 */
@@ -261,32 +250,20 @@ defineExpose({ show, hide, toggle, visible });
   opacity: 0;
 }
 
-.flyout-anim-up-enter-from.align-left {
-  transform: scaleY(0.9) translateY(4px);
-}
-
-.flyout-anim-up-enter-from.align-center {
-  transform: scaleY(0.9) translateY(4px);
-}
-
+.flyout-anim-up-enter-from.align-left,
+.flyout-anim-up-enter-from.align-center,
 .flyout-anim-up-enter-from.align-right {
-  transform: scaleY(0.9) translateY(4px);
+  /* opacity-only */
 }
 
 .flyout-anim-up-leave-to {
   opacity: 0;
 }
 
-.flyout-anim-up-leave-to.align-left {
-  transform: scaleY(0.9) translateY(4px);
-}
-
-.flyout-anim-up-leave-to.align-center {
-  transform: scaleY(0.9) translateY(4px);
-}
-
+.flyout-anim-up-leave-to.align-left,
+.flyout-anim-up-leave-to.align-center,
 .flyout-anim-up-leave-to.align-right {
-  transform: scaleY(0.9) translateY(4px);
+  /* opacity-only */
 }
 
 /* 保留旧的placement API用于向后兼容 */
@@ -308,11 +285,9 @@ defineExpose({ show, hide, toggle, visible });
 
 .flyout-anim-enter-from {
   opacity: 0;
-  transform: scaleY(0.9) translateY(-4px);
 }
 
 .flyout-anim-leave-to {
   opacity: 0;
-  transform: scaleY(0.9) translateY(-4px);
 }
 </style>

@@ -1194,8 +1194,7 @@ defineExpose({ focus: () => inputRef.value?.focus() });
 }
 .search-popup-enter-from {
   opacity: 0;
-  transform: translateY(-8px) scaleY(0.96);
-  transform-origin: top center;
+  /* 仅淡入，不加 transform —— .win-search-popup 自身带 backdrop-filter，transform 会废掉毛玻璃 */
 }
 .search-popup-leave-to {
   opacity: 0;
