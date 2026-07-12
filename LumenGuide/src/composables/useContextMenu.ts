@@ -29,6 +29,7 @@ export interface ContextMenuApi {
   contextMenuItems: ComputedRef<ContextMenuItem[]>;
   onContextMenuSelect: (item: ContextMenuItem) => Promise<void>;
   closeContextMenu: () => void;
+  openContextMenu: (x: number, y: number, target?: EventTarget | null) => void;
   onGlobalContextMenu: (e: MouseEvent) => void;
 }
 
@@ -140,6 +141,18 @@ export function useContextMenu(options: ContextMenuOptions): ContextMenuApi {
       return window.getSelection?.()?.toString() || '';
     }
     return window.getSelection?.()?.toString() || '';
+  };
+
+  /**
+   * 主动打开右键菜单（供 WinContextMenuSurface 等控件调用）。
+   * 同时兼容桌面右键与移动长按：传入坐标和事件目标即可。
+   */
+  const openContextMenu = (x: number, y: number, target: EventTarget | null = null): void => {
+    if (Date.now() < menuLockUntil) return;
+    contextMenuTarget.value = target;
+    contextMenuSelection.value = getSelectionText(target);
+    contextMenuAnchor.value = { clientX: x, clientY: y };
+    contextMenuOpen.value = true;
   };
 
   const onGlobalContextMenu = (e: MouseEvent): void => {
@@ -314,6 +327,7 @@ export function useContextMenu(options: ContextMenuOptions): ContextMenuApi {
     contextMenuItems,
     onContextMenuSelect,
     closeContextMenu,
+    openContextMenu,
     onGlobalContextMenu,
   };
 }

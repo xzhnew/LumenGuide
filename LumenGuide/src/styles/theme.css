@@ -13,7 +13,7 @@
 @property --flyout-bg {
   syntax: '<color>';
   inherits: true;
-  initial-value: rgba(252,252,252);
+  initial-value: rgba(252, 252, 252, 1);
 }
 
 @property --card-bg {
@@ -266,7 +266,7 @@
   --dialog-content-bg: rgba(255, 255, 255, 0.95);
   --dialog-divider: rgba(0, 0, 0, 0.06);
   --dialog-button-bg: #F3F3F3;
-  --flyout-bg: rgba(252, 252, 252);
+  --flyout-bg: rgba(252, 252, 252, 1);
   --flyout-border: rgba(0, 0, 0, 0.06);
   --flyout-backdrop: blur(30px) saturate(160%) brightness(1.02);
   --flyout-material-overlay: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
@@ -338,7 +338,7 @@
     --dialog-content-bg: rgba(43, 43, 43, 0);
     --dialog-divider: rgba(0, 0, 0, 0.20);
     --dialog-button-bg: #202020;
-    --flyout-bg: rgba(44, 44, 44);
+    --flyout-bg: rgba(44, 44, 44, 1);
     --flyout-border: rgba(255, 255, 255, 0.10);
     --flyout-backdrop: blur(44px) saturate(190%) brightness(1.22) contrast(1.05);
     --flyout-material-overlay: linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.025) 45%, rgba(0, 0, 0, 0.12));
@@ -433,7 +433,7 @@ html.theme-light {
   --dialog-content-bg: rgba(255, 255, 255, 0.95);
   --dialog-divider: rgba(0, 0, 0, 0.06);
   --dialog-button-bg: #F3F3F3;
-  --flyout-bg: rgba(252, 252, 252);
+  --flyout-bg: rgba(252, 252, 252, 1);
   --flyout-border: rgba(0, 0, 0, 0.06);
   --flyout-backdrop: blur(30px) saturate(160%) brightness(1.02);
   --flyout-material-overlay: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
@@ -741,4 +741,33 @@ html.theme-dark {
     --accent-aa-text: #000000;
   --accent-aa-text: #FFFFFF;
   --accent-aa-text: #000000;
+}
+
+/* ===== 老浏览器 / 降低透明度 / 无 backdrop-filter 的兜底：强制浮层背景不透明 ===== */
+@supports not (backdrop-filter: blur(1px)) {
+  .win-context-menu,
+  .win-search-popup,
+  .win-menu-flyout,
+  .win-combo-flyout,
+  .win-flyout,
+  .win-nav-shell.is-overlay-left .win-nav-left-panel,
+  .win-nav-content-header {
+    background: var(--material-acrylic, rgba(250, 250, 250, 0.95)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .win-context-menu,
+  .win-search-popup,
+  .win-menu-flyout,
+  .win-combo-flyout,
+  .win-flyout,
+  .win-nav-shell.is-overlay-left .win-nav-left-panel,
+  .win-nav-content-header {
+    background: var(--material-acrylic, rgba(250, 250, 250, 0.98)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }

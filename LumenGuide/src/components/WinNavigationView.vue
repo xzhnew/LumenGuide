@@ -1630,6 +1630,8 @@ watch(() => props.selectedValue, (val, oldVal) => {
       left: 0;
       bottom: 0;
       z-index: 20;
+      /* 先给不支持 color-mix 的老浏览器一个纯色兜底（无透明），再用 color-mix 覆盖 */
+      background: var(--app-bg);
       background: color-mix(in srgb, var(--app-bg) 72%, transparent);
       backdrop-filter: blur(28px) saturate(1.35);
       -webkit-backdrop-filter: blur(28px) saturate(1.35);
@@ -2405,6 +2407,8 @@ watch(() => props.selectedValue, (val, oldVal) => {
 
     /* LeftMinimal 模式：覆盖面板亚克力效果 */
     .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel {
+      /* 先给不支持 color-mix 的老浏览器一个纯色兜底，再用 color-mix 覆盖 */
+      background: var(--app-bg);
       background: color-mix(in srgb, var(--app-bg) 82%, transparent);
       backdrop-filter: blur(28px) saturate(1.35);
       -webkit-backdrop-filter: blur(28px) saturate(1.35);

@@ -1,36 +1,38 @@
 <template>
   <WinTitleBar title="全端启萌" :theme="themeSetting" />
-  <WinNavigationView v-model:selectedValue="currentPage"
-                     :paneDisplayMode="navPosition"
-                     :menuItems="navMenuItems"
-                     :footerItems="footerMenuItems"
-                     :isSettingsVisible="false"
-                     :showBackButton="true">
-    <!-- 左导航模式：搜索框在内容区顶部 -->
-    <template #contentHeader>
-      <WinSearchBox
-        v-model:text="searchQuery"
-        placeholder-text="搜索..."
-        nav-mode="left"
-        @querySubmitted="onQuerySubmitted" />
-    </template>
-
-    <!-- 顶导航模式：搜索框在顶部导航栏中 -->
-    <template #topSearch>
-      <div class="app-top-search">
+  <WinContextMenuSurface @request="onContextMenuRequest">
+    <WinNavigationView v-model:selectedValue="currentPage"
+                       :paneDisplayMode="navPosition"
+                       :menuItems="navMenuItems"
+                       :footerItems="footerMenuItems"
+                       :isSettingsVisible="false"
+                       :showBackButton="true">
+      <!-- 左导航模式：搜索框在内容区顶部 -->
+      <template #contentHeader>
         <WinSearchBox
           v-model:text="searchQuery"
           placeholder-text="搜索..."
-          nav-mode="top"
+          nav-mode="left"
           @querySubmitted="onQuerySubmitted" />
-      </div>
-    </template>
+      </template>
 
-    <!-- 主内容区 -->
-    <div v-if="pageComponent" :key="currentPage" class="page-container" :class="'page-anim-' + currentPage">
-      <component :is="pageComponent" :class="pageAnimClass" />
-    </div>
-  </WinNavigationView>
+      <!-- 顶导航模式：搜索框在顶部导航栏中 -->
+      <template #topSearch>
+        <div class="app-top-search">
+          <WinSearchBox
+            v-model:text="searchQuery"
+            placeholder-text="搜索..."
+            nav-mode="top"
+            @querySubmitted="onQuerySubmitted" />
+        </div>
+      </template>
+
+      <!-- 主内容区 -->
+      <div v-if="pageComponent" :key="currentPage" class="page-container" :class="'page-anim-' + currentPage">
+        <component :is="pageComponent" :class="pageAnimClass" />
+      </div>
+    </WinNavigationView>
+  </WinContextMenuSurface>
 
   <!-- 全局中文右键菜单（WinUI MenuFlyout 风格） -->
   <WinContextMenu
@@ -42,11 +44,12 @@
 </template>
 
 <script setup>
-import { ref, watch, provide, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, provide, computed, nextTick } from 'vue';
 import WinTitleBar from './components/WinTitleBar.vue';
 import WinNavigationView from './components/WinNavigationView.vue';
 import WinSearchBox from './components/WinSearchBox.vue';
 import WinContextMenu from './components/WinContextMenu.vue';
+import WinContextMenuSurface from './components/WinContextMenuSurface.vue';
 import { i18nKey, createI18n } from './components/i18n';
 
 import HomePage from './pages/HomePage.vue';
@@ -176,7 +179,7 @@ const {
   contextMenuItems,
   onContextMenuSelect,
   closeContextMenu,
-  onGlobalContextMenu,
+  openContextMenu,
 } = useContextMenu({
   currentPage,
   themeSetting,
@@ -191,13 +194,9 @@ const {
   },
 });
 
-onMounted(() => {
-  document.addEventListener('contextmenu', onGlobalContextMenu, true);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('contextmenu', onGlobalContextMenu, true);
-});
+const onContextMenuRequest = ({ clientX, clientY, target }) => {
+  openContextMenu(clientX, clientY, target);
+};
 </script>
 
 <style>
