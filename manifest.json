@@ -1,0 +1,11 @@
+{
+  "name": "全端启萌",
+  "short_name": "LumenGuide",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay"
+  ],
+  "start_url": "/LumenGuide/",
+  "theme_color": "transparent",
+  "background_color": "transparent"
+}
