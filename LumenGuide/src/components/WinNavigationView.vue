@@ -38,7 +38,7 @@
       <!-- spacer：仅在「顶部模式·桌面端」显示，把「搜索框 + 设置」整组推到最右固定 -->
       <div class="win-nav-top-spacer"></div>
       <!-- 搜索框：两种模式都显示 -->
-      <div class="win-nav-top-search-wrap">
+      <div class="win-nav-top-search-wrap" ref="topSearchWrapRef">
         <slot name="topSearch"></slot>
       </div>
       <!-- 底部菜单 + 设置（LeftMinimal 模式下隐藏，设置通过左面板访问）。
@@ -221,6 +221,7 @@ const indicatorTrack = ref(null);
 const scrollArea = ref(null);
 const topPrimaryMenuRef = ref(null);
 const topFooterMenuRef = ref(null);
+const topSearchWrapRef = ref(null);
 const topMeasureRef = ref(null);
 const moreButtonRef = ref(null);
 const topBackButtonRef = ref(null);
@@ -390,24 +391,39 @@ const getTopItemsWidth = (values) => {
   return values.reduce((sum, value) => sum + measureTopItemWidth(value), 0) + (values.length - 1) * 4;
 };
 
+// 顶部模式导航项数量上限：最多显示 TOP_MAX_VISIBLE 个，给搜索框和设置按钮预留固定空间
+const TOP_MAX_VISIBLE = 7;
+
 const topLayout = computed(() => {
   if (!isTopNavigation.value) {
     return { visibleValues: props.menuItems.map(item => item.value), overflowValues: [] };
   }
 
   const orderedValues = props.menuItems.map(item => item.value);
+  const selectedRoot = selectedTopRootValue.value;
+  const protectedValue = orderedValues.includes(selectedRoot) ? selectedRoot : null;
+
+  // 按数量上限裁剪（优先保留当前选中项所在的组/项）
+  const capVisible = (values) => {
+    let visible = values.slice(0, TOP_MAX_VISIBLE);
+    if (protectedValue && !visible.includes(protectedValue)) {
+      visible = [protectedValue, ...values.filter(v => v !== protectedValue)].slice(0, TOP_MAX_VISIBLE);
+    }
+    const visibleSet = new Set(visible);
+    return { visibleValues: visible, overflowValues: orderedValues.filter(v => !visibleSet.has(v)) };
+  };
+
   const available = topAvailableWidth.value;
   if (!Number.isFinite(available) || available <= 0) {
-    return { visibleValues: orderedValues, overflowValues: [] };
+    return capVisible(orderedValues);
   }
 
   const allWidth = getTopItemsWidth(orderedValues);
   if (allWidth <= available) {
-    return { visibleValues: orderedValues, overflowValues: [] };
+    // 宽度够：仍受数量上限约束
+    return capVisible(orderedValues);
   }
 
-  const selectedRoot = selectedTopRootValue.value;
-  const protectedValue = orderedValues.includes(selectedRoot) ? selectedRoot : null;
   const moreReserve = topMoreButtonWidth.value + 4;
   const capacity = Math.max(0, available - moreReserve);
   let visibleValues = [];
@@ -427,6 +443,16 @@ const topLayout = computed(() => {
 
   if (protectedValue && !visibleValues.includes(protectedValue)) {
     visibleValues = [protectedValue];
+  }
+
+  // 数量上限：宽度算出之后再限制到 TOP_MAX_VISIBLE 个导航项
+  if (visibleValues.length > TOP_MAX_VISIBLE) {
+    const keep = new Set(visibleValues.slice(0, TOP_MAX_VISIBLE));
+    if (protectedValue && !keep.has(protectedValue)) {
+      keep.delete(visibleValues[TOP_MAX_VISIBLE - 1]);
+      keep.add(protectedValue);
+    }
+    visibleValues = visibleValues.filter(v => keep.has(v));
   }
 
   const visibleSet = new Set(visibleValues);
@@ -567,7 +593,10 @@ const updateTopNavigationLayout = () => {
   const navWidth = navEl.getBoundingClientRect().width;
   const footerWidth = footerEl?.getBoundingClientRect().width || 0;
   const topBackWidth = topBackEl?.getBoundingClientRect().width || 0;
-  topAvailableWidth.value = Math.max(0, navWidth - footerWidth - topBackWidth - 12);
+  // 预留搜索框宽度（至少为 CSS 的 min-width 200px + 间距），避免搜索被挤掉/裁切
+  const searchWidth = topSearchWrapRef.value?.getBoundingClientRect().width || 0;
+  const searchReserve = Math.max(200, searchWidth) + 8;
+  topAvailableWidth.value = Math.max(0, navWidth - footerWidth - topBackWidth - searchReserve - 12);
 
   if (measureEl) {
     const nextWidths = {};
