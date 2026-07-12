@@ -75,7 +75,7 @@ const displayMode = computed(() => {
 // Icon字形（从iconSource提取或使用Segoe图标）
 const iconGlyph = computed(() => {
   if (props.iconSource) {
-    // 如果是Unicode字符（如 ），直接返回
+    // 如果是Unicode字符（如 \uE13C），直接返回
     if (props.iconSource.startsWith('\\u')) {
       return String.fromCharCode(parseInt(props.iconSource.slice(2), 16));
     }

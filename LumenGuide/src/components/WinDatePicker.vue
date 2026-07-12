@@ -21,7 +21,7 @@
                     :class="{ pressed: pressedKey === 'month-up' }"
                     @mousedown="pressedKey = 'month-up'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollUp('month')">
-              <span class="icon">&#xEDDB;</span>
+              <span class="icon">{{ '\uEDDB' }}</span>
             </button>
             <div class="picker-column" ref="monthCol">
               <div class="picker-item" v-for="(item, i) in monthDisplay" :key="'m'+i"
@@ -33,7 +33,7 @@
                     :class="{ pressed: pressedKey === 'month-down' }"
                     @mousedown="pressedKey = 'month-down'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollDown('month')">
-              <span class="icon">&#xEDDC;</span>
+              <span class="icon">{{ '\uEDDC' }}</span>
             </button>
           </div>
           <div class="picker-col-divider"></div>
@@ -43,7 +43,7 @@
                     :class="{ pressed: pressedKey === 'day-up' }"
                     @mousedown="pressedKey = 'day-up'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollUp('day')">
-              <span class="icon">&#xEDDB;</span>
+              <span class="icon">{{ '\uEDDB' }}</span>
             </button>
             <div class="picker-column" ref="dayCol">
               <div class="picker-item" v-for="(item, i) in dayDisplay" :key="'d'+i"
@@ -55,7 +55,7 @@
                     :class="{ pressed: pressedKey === 'day-down' }"
                     @mousedown="pressedKey = 'day-down'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollDown('day')">
-              <span class="icon">&#xEDDC;</span>
+              <span class="icon">{{ '\uEDDC' }}</span>
             </button>
           </div>
           <template v-if="yearVisible">
@@ -66,7 +66,7 @@
                       :class="{ pressed: pressedKey === 'year-up' }"
                       @mousedown="pressedKey = 'year-up'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                       @click="scrollUp('year')">
-                <span class="icon">&#xEDDB;</span>
+                <span class="icon">{{ '\uEDDB' }}</span>
               </button>
               <div class="picker-column" ref="yearCol">
                 <div class="picker-item" v-for="(item, i) in yearDisplay" :key="'y'+i"
@@ -78,15 +78,15 @@
                       :class="{ pressed: pressedKey === 'year-down' }"
                       @mousedown="pressedKey = 'year-down'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                       @click="scrollDown('year')">
-                <span class="icon">&#xEDDC;</span>
+                <span class="icon">{{ '\uEDDC' }}</span>
               </button>
             </div>
           </template>
           <div class="picker-highlight"></div>
         </div>
         <div class="picker-actions">
-          <button class="picker-action-btn" @click="close(true)"><span class="icon">&#xE8FB;</span></button>
-          <button class="picker-action-btn" @click="close(false)"><span class="icon">&#xE711;</span></button>
+          <button class="picker-action-btn" @click="close(true)"><span class="icon">{{ '\uE8FB' }}</span></button>
+          <button class="picker-action-btn" @click="close(false)"><span class="icon">{{ '\uE711' }}</span></button>
         </div>
       </div>
     </Teleport>

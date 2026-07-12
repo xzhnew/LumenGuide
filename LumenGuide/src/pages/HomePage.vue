@@ -18,7 +18,7 @@
     </section>
 
     <!-- ====== 九大章 ====== -->
-    <div class="section-title"><span class="icon section-icon">&#xE8D9;</span> 九大章</div>
+    <div class="section-title"><span class="icon section-icon">{{ '\uE8D9' }}</span> 九大章</div>
       <div class="chapter-grid">
         <button
           v-for="c in chapters"
@@ -35,7 +35,7 @@
     <div class="rf-grid">
       <div class="sidebar-card">
         <h3 class="sidebar-title">
-          <span class="icon">&#xE823;</span>
+          <span class="icon">{{ '\uE823' }}</span>
           最近访问
         </h3>
         <div v-if="!recentPages.length" class="sidebar-empty">暂无访问记录</div>
@@ -49,13 +49,13 @@
 
       <div class="sidebar-card">
         <h3 class="sidebar-title">
-          <span class="icon">&#xE735;</span>
+          <span class="icon">{{ '\uE735' }}</span>
           我的收藏
         </h3>
         <div v-if="!favoritePages.length" class="sidebar-empty">暂无收藏</div>
         <ul v-else class="sidebar-list">
           <li v-for="item in favoritePages" :key="item.key" class="sidebar-item" @click="goPage(item.key)">
-            <span class="icon sidebar-dot">&#xE734;</span>
+            <span class="icon sidebar-dot">{{ '\uE734' }}</span>
             <span>{{ item.titlePlain || item.titleZh || item.title }}</span>
           </li>
         </ul>

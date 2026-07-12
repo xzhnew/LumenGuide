@@ -21,17 +21,17 @@
         <template #actions>
           <div v-if="SpinButtonPlacementMode === 'Inline'" class="win-number-spin inline">
             <button type="button" class="win-textbox-action-button win-number-spin-button" :disabled="!canIncrease" @pointerdown.prevent @click="changeBy(SmallChange)">
-              <span></span>
+              <span>{{ '\uE70E' }}</span>
             </button>
             <button type="button" class="win-textbox-action-button win-number-spin-button" :disabled="!canDecrease" @pointerdown.prevent @click="changeBy(-SmallChange)">
-              <span></span>
+              <span>{{ '\uE70D' }}</span>
             </button>
           </div>
           <span
             v-else-if="SpinButtonPlacementMode === 'Compact'"
             class="win-number-compact-indicator"
             aria-hidden="true">
-            <span></span>
+            <span>{{ '\uEC8F' }}</span>
           </span>
         </template>
       </WinTextBox>
@@ -44,10 +44,10 @@
         :style="compactPopupStyle"
         @pointerdown.prevent>
         <button type="button" class="win-number-popup-button" :disabled="!canIncrease" @click="changeBy(SmallChange)">
-          <span>&#xE70E;</span>
+          <span>{{ '\uE70E' }}</span>
         </button>
         <button type="button" class="win-number-popup-button" :disabled="!canDecrease" @click="changeBy(-SmallChange)">
-          <span>&#xE70D;</span>
+          <span>{{ '\uE70D' }}</span>
         </button>
       </div>
     </Teleport>

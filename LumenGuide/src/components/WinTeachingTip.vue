@@ -37,7 +37,7 @@
           <slot></slot>
         </div>
         <button v-if="showCloseButton" class="teaching-tip-close" @click="$emit('close')">
-          <span class="icon">&#xE711;</span>
+          <span class="icon">{{ '\uE711' }}</span>
         </button>
       </div>
       <div v-if="$slots.actions" class="teaching-tip-actions">

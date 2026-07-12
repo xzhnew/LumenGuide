@@ -36,7 +36,7 @@
               @click="handleClose"
               aria-label="Close"
               type="button">
-        <span class="close-icon">&#xE711;</span>
+        <span class="close-icon">{{ '\uE711' }}</span>
       </button>
     </div>
   </transition>

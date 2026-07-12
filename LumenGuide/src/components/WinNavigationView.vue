@@ -8,13 +8,13 @@
       <div v-if="isLeftMinimalMode" class="win-nav-hamburger win-nav-hamburger-top" @click="toggleCompact"
         :class="{ 'is-active': !isCompact }"
         @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
-        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
+        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">{{ '\uE700' }}</span>
       </div>
       <!-- Top 模式：汉堡按钮用于移动端菜单（桌面端由 CSS 隐藏） -->
       <div v-if="isTopNavigation" class="win-nav-hamburger win-nav-hamburger-top" @click="toggleTopMenu"
         :class="{ 'is-active': topMenuExpanded }"
         @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
-        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
+        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">{{ '\uE700' }}</span>
       </div>
       <!-- Top 模式：顶部菜单项（LeftMinimal 模式下隐藏） -->
       <div v-if="isTopNavigation" class="win-nav-menu win-nav-top-primary-menu" :class="{ 'is-mobile-hidden': !topMenuExpanded && isSmallScreen }" ref="topPrimaryMenuRef">
@@ -27,12 +27,12 @@
             <div class="win-nav-item win-nav-group-header" :class="{ 'is-selected': item.selectsOnInvoked !== false && selectedValue === item.value }" @click="onGroupHeaderClick(item)" :ref="el => setItemRef(item.value, el)">
               <span class="icon">{{ item.icon }}</span>
               <span class="label">{{ item.label }}</span>
-              <span class="icon win-nav-group-chevron" :class="groupChevronClass(item.value)">&#xE70D;</span>
+              <span class="icon win-nav-group-chevron" :class="groupChevronClass(item.value)">{{ '\uE70D' }}</span>
             </div>
           </div>
         </template>
         <div v-if="topOverflowMenuItems.length" class="win-nav-item win-nav-more-button" aria-label="More" @click="toggleMoreFlyout" ref="moreButtonRef">
-          <span class="icon">&#xE712;</span>
+          <span class="icon">{{ '\uE712' }}</span>
         </div>
       </div>
       <!-- spacer：仅在「顶部模式·桌面端」显示，把「搜索框 + 设置」整组推到最右固定 -->
@@ -62,11 +62,11 @@
           <div class="win-nav-item" :data-value="item.value">
             <span class="icon">{{ item.icon }}</span>
             <span class="label">{{ item.label }}</span>
-            <span v-if="item.children" class="icon win-nav-group-chevron">&#xE70D;</span>
+            <span v-if="item.children" class="icon win-nav-group-chevron">{{ '\uE70D' }}</span>
           </div>
         </template>
         <div class="win-nav-item win-nav-more-button" data-value="__more">
-          <span class="icon">&#xE712;</span>
+          <span class="icon">{{ '\uE712' }}</span>
         </div>
       </div>
     </nav>
@@ -75,20 +75,20 @@
       <!-- LeftMinimal 模式：覆盖面板顶部栏 [←] [☰] -->
       <div v-if="isLeftMinimalMode && !isCompact" class="win-nav-minimal-top">
         <div v-if="showBackButtonResolved" class="win-nav-back-button" :class="{ 'is-disabled': !canGoBack }" role="button" :aria-disabled="!canGoBack" @click="onBackClick" @mousedown="onBackDown" @mouseup="onBackUp" @mouseleave="onBackLeave">
-          <span class="icon animated-icon animated-icon-back" :class="backClass" @animationend="onBackAnimEnd">&#xE72B;</span>
+          <span class="icon animated-icon animated-icon-back" :class="backClass" @animationend="onBackAnimEnd">{{ '\uE72B' }}</span>
         </div>
         <div class="win-nav-hamburger" @click="toggleCompact" @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
-          <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
+          <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">{{ '\uE700' }}</span>
         </div>
       </div>
       <div class="win-nav-indicator-track" ref="indicatorTrack" v-show="!isLeftMinimalMode || !isCompact">
         <div class="win-nav-indicator" :class="{ 'is-child': indicatorIsChild }" :style="indicatorStyle"></div>
       </div>
       <div v-if="showBackButtonInLeftNav && !isLeftMinimalMode" class="win-nav-back-button" :class="{ 'is-disabled': !canGoBack }" role="button" :aria-disabled="!canGoBack" @click="onBackClick" @mousedown="onBackDown" @mouseup="onBackUp" @mouseleave="onBackLeave">
-        <span class="icon animated-icon animated-icon-back" :class="backClass" @animationend="onBackAnimEnd">&#xE72B;</span>
+        <span class="icon animated-icon animated-icon-back" :class="backClass" @animationend="onBackAnimEnd">{{ '\uE72B' }}</span>
       </div>
       <div v-if="isPaneToggleButtonVisible && !isLeftMinimalMode" class="win-nav-hamburger" @click="toggleCompact" @mousedown="onHamburgerDown" @mouseup="onHamburgerUp" @mouseleave="onHamburgerLeave">
-        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">&#xE700;</span>
+        <span class="icon animated-icon animated-icon-hamburger" :class="hamburgerClass" @animationend="onHamburgerAnimEnd">{{ '\uE700' }}</span>
       </div>
       <div v-if="$slots.paneHeader || paneTitle || $slots.autoSuggestBox" class="win-nav-pane-top" v-show="!isLeftMinimalMode || !isCompact">
         <div v-if="$slots.paneHeader" class="win-nav-pane-header"><slot name="paneHeader"></slot></div>
@@ -106,7 +106,7 @@
               <div class="win-nav-item win-nav-group-header" :class="{ 'is-selected': item.selectsOnInvoked !== false && selectedValue === item.value }" @click="onGroupHeaderClick(item)" :ref="el => setItemRef(item.value, el)">
                 <span class="icon">{{ item.icon }}</span>
                 <span class="label">{{ item.label }}</span>
-                <span class="icon win-nav-group-chevron" :class="groupChevronClass(item.value)">&#xE70D;</span>
+                <span class="icon win-nav-group-chevron" :class="groupChevronClass(item.value)">{{ '\uE70D' }}</span>
               </div>
               <div v-if="!isCompact" class="win-nav-group-children" :style="{ height: groupExpanded[item.value] ? (groupHeights[item.value] || 0) + 'px' : '0px' }">
                 <div class="win-nav-group-children-inner" :ref="el => setChildrenRef(item.value, el)">
@@ -156,7 +156,7 @@
             <div class="win-nav-item win-nav-group-header" :class="{ 'is-selected': item.selectsOnInvoked !== false && selectedValue === item.value }" @click="onMoreGroupHeaderClick(item)">
               <span class="icon">{{ item.icon }}</span>
               <span class="label">{{ item.label }}</span>
-              <span class="icon win-nav-group-chevron" :class="groupChevronClass(item.value)">&#xE70D;</span>
+              <span class="icon win-nav-group-chevron" :class="groupChevronClass(item.value)">{{ '\uE70D' }}</span>
             </div>
             <div class="win-nav-group-children" :style="{ height: groupExpanded[item.value] ? ((item.children?.length || 0) * 38 + 2) + 'px' : '0px' }">
               <div class="win-nav-group-children-inner">

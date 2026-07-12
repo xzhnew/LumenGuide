@@ -39,7 +39,7 @@
             <span class="icon">{{ playIcon }}</span>
           </button>
           <button class="win-media-icon-button" @click="showCastPanel" aria-label="Cast">
-            <span class="icon">&#xEC16;</span>
+            <span class="icon">{{ '\uEC16' }}</span>
           </button>
         </div>
       </div>

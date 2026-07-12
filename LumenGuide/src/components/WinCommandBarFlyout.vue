@@ -34,7 +34,7 @@
           :aria-label="t('text.more')"
           :aria-expanded="secondaryOpen"
           @click="secondaryOpen = !secondaryOpen">
-          <span class="win-cbf-icon"></span>
+          <span class="win-cbf-icon">{{ '\uE712' }}</span>
         </button>
       </div>
 

@@ -9,7 +9,7 @@
       <span>{{ selectedLabel }}</span>
       <span class="icon chevron chevron-animate"
             :class="chevronClass"
-            @animationend="onChevronAnimEnd">&#xE70D;</span>
+            @animationend="onChevronAnimEnd">{{ '\uE70D' }}</span>
     </button>
     <Teleport to="body">
       <div v-if="isOpen" class="win-combo-overlay" @click.stop="close" @contextmenu.prevent="close"></div>

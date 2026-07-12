@@ -18,7 +18,7 @@
       :aria-label="t('text.scroll-left')"
       :title="t('text.scroll-left')"
       @click="scrollBack">
-      <span class="icon win-horizontal-scroll-arrow"></span>
+      <span class="icon win-horizontal-scroll-arrow">{{ '\uEDD9' }}</span>
     </button>
 
     <button
@@ -29,7 +29,7 @@
       :aria-label="t('text.scroll-right')"
       :title="t('text.scroll-right')"
       @click="scrollForward">
-      <span class="icon win-horizontal-scroll-arrow"></span>
+      <span class="icon win-horizontal-scroll-arrow">{{ '\uEDDA' }}</span>
     </button>
   </div>
 </template>

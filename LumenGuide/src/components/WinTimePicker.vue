@@ -21,7 +21,7 @@
                     :class="{ pressed: pressedKey === 'hour-up' }"
                     @mousedown="pressedKey = 'hour-up'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollUp('hour')">
-              <span class="icon">&#xEDDB;</span>
+              <span class="icon">{{ '\uEDDB' }}</span>
             </button>
             <div class="picker-column" ref="hourCol">
               <div class="picker-item" v-for="(item, i) in hourDisplay" :key="'h'+i"
@@ -33,7 +33,7 @@
                     :class="{ pressed: pressedKey === 'hour-down' }"
                     @mousedown="pressedKey = 'hour-down'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollDown('hour')">
-              <span class="icon">&#xEDDC;</span>
+              <span class="icon">{{ '\uEDDC' }}</span>
             </button>
           </div>
           <div class="picker-col-divider"></div>
@@ -43,7 +43,7 @@
                     :class="{ pressed: pressedKey === 'minute-up' }"
                     @mousedown="pressedKey = 'minute-up'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollUp('minute')">
-              <span class="icon">&#xEDDB;</span>
+              <span class="icon">{{ '\uEDDB' }}</span>
             </button>
             <div class="picker-column" ref="minuteCol">
               <div class="picker-item" v-for="(item, i) in minuteDisplay" :key="'m'+i"
@@ -55,7 +55,7 @@
                     :class="{ pressed: pressedKey === 'minute-down' }"
                     @mousedown="pressedKey = 'minute-down'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                     @click="scrollDown('minute')">
-              <span class="icon">&#xEDDC;</span>
+              <span class="icon">{{ '\uEDDC' }}</span>
             </button>
           </div>
           <template v-if="clockIdentifier === '12HourClock'">
@@ -66,7 +66,7 @@
                       :class="{ pressed: pressedKey === 'ampm-up' }"
                       @mousedown="pressedKey = 'ampm-up'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                       @click="scrollUp('ampm')">
-                <span class="icon">&#xEDDB;</span>
+                <span class="icon">{{ '\uEDDB' }}</span>
               </button>
               <div class="picker-column" ref="ampmCol">
                 <div class="picker-item" v-for="(item, i) in ampmDisplay" :key="'ap'+i"
@@ -78,15 +78,15 @@
                       :class="{ pressed: pressedKey === 'ampm-down' }"
                       @mousedown="pressedKey = 'ampm-down'" @mouseup="pressedKey = ''" @mouseleave="pressedKey = ''"
                       @click="scrollDown('ampm')">
-                <span class="icon">&#xEDDC;</span>
+                <span class="icon">{{ '\uEDDC' }}</span>
               </button>
             </div>
           </template>
           <div class="picker-highlight"></div>
         </div>
         <div class="picker-actions">
-          <button class="picker-action-btn" @click="close(true)"><span class="icon">&#xE8FB;</span></button>
-          <button class="picker-action-btn" @click="close(false)"><span class="icon">&#xE711;</span></button>
+          <button class="picker-action-btn" @click="close(true)"><span class="icon">{{ '\uE8FB' }}</span></button>
+          <button class="picker-action-btn" @click="close(false)"><span class="icon">{{ '\uE711' }}</span></button>
         </div>
       </div>
     </Teleport>

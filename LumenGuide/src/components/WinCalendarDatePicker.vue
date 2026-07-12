@@ -3,7 +3,7 @@
   <div class="win-calendar-date-picker" ref="containerRef">
     <button class="picker-btn" @click="toggleOpen">
       <span class="picker-text" :class="{ 'placeholder': !modelValue }">{{ displayText }}</span>
-      <span class="icon picker-icon">&#xE787;</span>
+      <span class="icon picker-icon">{{ '\uE787' }}</span>
     </button>
     <Teleport to="body">
       <div v-if="isOpen" class="picker-overlay" @click="isOpen = false"></div>

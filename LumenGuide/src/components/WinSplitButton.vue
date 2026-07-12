@@ -9,7 +9,7 @@
             @mouseleave="onChevronLeave">
       <span class="icon chevron-animate"
             :class="chevronClass"
-            @animationend="onChevronAnimEnd">&#xE70D;</span>
+            @animationend="onChevronAnimEnd">{{ '\uE70D' }}</span>
     </button>
     <WinMenuFlyout :open="isOpen" :anchorRect="anchorRect" :items="flyoutItems" @close="isOpen = false" @select="onSelect" />
   </div>

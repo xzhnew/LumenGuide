@@ -12,7 +12,7 @@
       @click="previousPage"
       :aria-label="previousButtonLabel"
     >
-      <span class="icon" v-html="effectiveOrientation === 'Horizontal' ? '&#xE76B;' : '&#xE70E;'"></span>
+      <span class="icon" v-html="effectiveOrientation === 'Horizontal' ? '\uE76B' : '\uE70E'"></span>
     </button>
 
     <!-- Pips Container -->
@@ -45,7 +45,7 @@
       @click="nextPage"
       :aria-label="nextButtonLabel"
     >
-      <span class="icon" v-html="effectiveOrientation === 'Horizontal' ? '&#xE76C;' : '&#xE70D;'"></span>
+      <span class="icon" v-html="effectiveOrientation === 'Horizontal' ? '\uE76C' : '\uE70D'"></span>
     </button>
   </div>
 </template>

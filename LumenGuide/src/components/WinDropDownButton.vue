@@ -8,7 +8,7 @@
       <span><slot></slot></span>
       <span class="icon win-dd-chevron chevron-animate"
             :class="[chevronClass, { open: isOpen }]"
-            @animationend="onChevronAnimEnd">&#xE70D;</span>
+            @animationend="onChevronAnimEnd">{{ '\uE70D' }}</span>
     </button>
     <WinMenuFlyout :open="isOpen" :anchorRect="anchorRect" :items="flyoutItems" @close="isOpen = false" @select="onSelect" />
   </div>

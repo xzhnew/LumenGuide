@@ -3,7 +3,7 @@
     <WinExpander>
       <template #header>
         <div style="display: flex; align-items: center; gap: 12px;">
-          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">&#xE706;</span>
+          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">{{ '\uE706' }}</span>
           <div style="display: flex; flex-direction: column;">
             <span style="font-size: 14px;">主题</span>
             <span style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">选择应用的颜色模式</span>
@@ -18,7 +18,7 @@
     <WinExpander>
       <template #header>
         <div style="display: flex; align-items: center; gap: 12px;">
-          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">&#xE8AB;</span>
+          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">{{ '\uE8AB' }}</span>
           <div style="display: flex; flex-direction: column;">
             <span style="font-size: 14px;">页面切换动画</span>
             <span style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">切换页面时的动画风格</span>
@@ -33,7 +33,7 @@
     <WinSettingsCard>
       <template #header>
         <div style="display: flex; align-items: center; gap: 12px;">
-          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">&#xF594;</span>
+          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">{{ '\uF594' }}</span>
           <div style="display: flex; flex-direction: column;">
             <span style="font-size: 14px;">导航窗格位置</span>
             <span style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">选择导航栏的位置</span>
@@ -46,7 +46,7 @@
     <WinExpander>
       <template #header>
         <div style="display: flex; align-items: center; gap: 12px;">
-          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">&#xE946;</span>
+          <span class="icon" style="font-size: 20px; width: 25px; text-align: center;">{{ '\uE946' }}</span>
           <div style="display: flex; flex-direction: column;">
             <span style="font-size: 14px;">关于</span>
             <span style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">项目信息</span>
@@ -55,7 +55,7 @@
       </template>
       <div class="about-section">
         <div class="about-title">
-          <span class="icon about-logo">&#xE8A5;</span>
+          <span class="icon about-logo">{{ '\uE8A5' }}</span>
           <span>全端启萌</span>
         </div>
         <p class="about-desc">

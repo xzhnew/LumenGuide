@@ -6,7 +6,7 @@
       :title="themeTooltip"
       @click="$emit('theme-toggle')"
       style="width: 32px; height: 32px; padding: 0; min-width: 0;">
-      <span class="icon">&#xE793;</span>
+      <span class="icon">{{ '\uE793' }}</span>
     </WinButton>
 
     <!-- 收藏按钮 -->

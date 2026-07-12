@@ -10,7 +10,7 @@
           @click="toggleTheme"
           style="width: 32px; height: 32px; padding: 0; min-width: 0;"
           :aria-label="pageTheme === 'dark' ? '切换到浅色主题' : '切换到深色主题'">
-          <span class="icon">&#xE793;</span>
+          <span class="icon">{{ '\uE793' }}</span>
         </WinButton>
         <!-- 收藏 -->
         <WinToggleButton

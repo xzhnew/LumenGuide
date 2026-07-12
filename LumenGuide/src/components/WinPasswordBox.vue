@@ -27,7 +27,7 @@
           @pointerup.prevent="hidePeek"
           @pointerleave="hidePeek"
           @click="toggleVisible">
-          <span>&#xF78D;</span>
+          <span>{{ '\uF78D' }}</span>
         </button>
       </template>
     </WinTextBox>

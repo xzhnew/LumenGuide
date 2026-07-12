@@ -9,7 +9,7 @@
         <span v-if="header">{{ header }}</span>
       </slot>
       <span class="win-expander-chevron">
-        <span class="icon win-expander-arrow">&#xE70D;</span>
+        <span class="icon win-expander-arrow">{{ '\uE70D' }}</span>
       </span>
     </button>
     <div class="win-expander-grid">

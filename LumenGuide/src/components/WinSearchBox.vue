@@ -23,7 +23,7 @@
         class="win-search-clear"
         @mousedown.prevent="clearQuery"
         aria-label="清除搜索">
-        <span class="icon">&#xE711;</span>
+        <span class="icon">{{ '\uE711' }}</span>
       </button>
       <!-- QueryIcon：搜索框末端、框内的 WinButton，点击等价于回车提交 -->
       <WinButton
@@ -61,7 +61,7 @@
               <!-- 最近访问 -->
               <div v-if="recentItems.length" class="win-search-column">
                 <div class="win-search-section-title">
-                  <span class="icon">&#xE823;</span>
+                  <span class="icon">{{ '\uE823' }}</span>
                   <span>最近访问</span>
                 </div>
                 <div class="win-search-list-simple">
@@ -78,7 +78,7 @@
               <!-- 我的收藏 -->
               <div v-if="favoriteItems.length" class="win-search-column">
                 <div class="win-search-section-title">
-                  <span class="icon">&#xE735;</span>
+                  <span class="icon">{{ '\uE735' }}</span>
                   <span>我的收藏</span>
                 </div>
                 <div class="win-search-list-simple">
@@ -94,7 +94,7 @@
               </div>
             </div>
             <div v-if="!recentItems.length && !favoriteItems.length" class="win-search-hero">
-              <div class="win-search-hero-icon"><span class="icon">&#xE721;</span></div>
+              <div class="win-search-hero-icon"><span class="icon">{{ '\uE721' }}</span></div>
               <div class="win-search-hero-title">搜索内容</div>
               <div class="win-search-hero-desc">输入关键词搜索。试试 <code>项目</code>、<code>介绍</code> 或 <code>设置</code>。</div>
             </div>
@@ -103,7 +103,7 @@
           <!-- 搜索结果：分类分组显示 -->
           <div v-else class="win-search-results">
             <div v-if="!flatSuggestions.length" class="win-search-no-results">
-              <div class="win-search-no-results-icon"><span class="icon">&#xE721;</span></div>
+              <div class="win-search-no-results-icon"><span class="icon">{{ '\uE721' }}</span></div>
               <div>没有匹配 <strong>"{{ query }}"</strong> 的内容</div>
             </div>
             <template v-else>
@@ -141,12 +141,12 @@
           <!-- 底部快捷键提示 -->
           <div v-if="showFooter" class="win-search-popup-footer">
             <div class="win-footer-left">
-              <span class="icon win-footer-icon">&#xE946;</span>
+              <span class="icon win-footer-icon">{{ '\uE946' }}</span>
               <span>{{ flatSuggestions.length || '' }} 条结果</span>
             </div>
             <div class="win-footer-right">
               <div><kbd>&#8593;&#8595;</kbd><span>浏览</span></div>
-              <div><kbd>&#x21B5;</kbd><span>打开</span></div>
+              <div><kbd>{{ '\u21B5' }}</kbd><span>打开</span></div>
               <div><kbd>Esc</kbd><span>关闭</span></div>
             </div>
           </div>

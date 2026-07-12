@@ -39,10 +39,10 @@ const selectItem = (index) => {
 };
 
 const iconMap = {
-  'Code': '&#xE943;',
-  'Clock': '&#xE823;',
-  'Share': '&#xE72D;',
-  'Favorite': '&#xE734;'
+  'Code': '\uE943',
+  'Clock': '\uE823',
+  'Share': '\uE72D',
+  'Favorite': '\uE734'
 };
 
 const getIconCode = (iconName) => {

@@ -43,14 +43,14 @@
       @pointerenter="handleScrollBarPointerEnter('vertical', $event)"
       @pointerleave="handleScrollBarPointerLeave('vertical')"
     >
-      <button class="scrollbar-button decrease icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('vertical', -1, $event)"></button>
+      <button class="scrollbar-button decrease icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('vertical', -1, $event)">{{ '\uEDDB' }}</button>
       <div class="scrollbar-track"></div>
       <div
         class="scrollbar-thumb"
         :style="verticalThumbStyle"
         @mousedown="startVerticalDrag"
       ></div>
-      <button class="scrollbar-button increase icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('vertical', 1, $event)"></button>
+      <button class="scrollbar-button increase icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('vertical', 1, $event)">{{ '\uEDDC' }}</button>
     </div>
 
     <div
@@ -60,14 +60,14 @@
       @pointerenter="handleScrollBarPointerEnter('horizontal', $event)"
       @pointerleave="handleScrollBarPointerLeave('horizontal')"
     >
-      <button class="scrollbar-button decrease icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('horizontal', -1, $event)"></button>
+      <button class="scrollbar-button decrease icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('horizontal', -1, $event)">{{ '\uEDD9' }}</button>
       <div class="scrollbar-track"></div>
       <div
         class="scrollbar-thumb"
         :style="horizontalThumbStyle"
         @mousedown="startHorizontalDrag"
       ></div>
-      <button class="scrollbar-button increase icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('horizontal', 1, $event)"></button>
+      <button class="scrollbar-button increase icon" type="button" aria-hidden="true" tabindex="-1" @pointerdown.prevent="startLineScroll('horizontal', 1, $event)">{{ '\uEDDA' }}</button>
     </div>
     <div v-if="hasVerticalScrollBar && hasHorizontalScrollBar" class="scrollbar-corner"></div>
   </div>

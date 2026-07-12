@@ -83,7 +83,7 @@
           @pointerdown.prevent
           @click="clearText">
           <span class="win-textbox-delete-button-layout">
-            <span class="win-textbox-delete-glyph">&#xE894;</span>
+            <span class="win-textbox-delete-glyph">{{ '\uE894' }}</span>
           </span>
         </button>
 

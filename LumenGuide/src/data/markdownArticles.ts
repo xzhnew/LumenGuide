@@ -99,7 +99,7 @@ export const markdownArticles: MarkdownArticle[] = [
     "chapter": 2,
     "section": 2,
     "title": "文件与文件夹：你的数字收纳",
-    "icon": "",
+    "icon": "",
     "summary": "什么是文件、文件夹、路径？学会新建、重命名、移动、删除，电脑就不再是一团乱麻。",
     "keywords": [
       "文件",
