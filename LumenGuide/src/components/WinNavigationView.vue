@@ -1556,7 +1556,7 @@ watch(() => props.selectedValue, (val, oldVal) => {
     flex: 1;
     min-width: 0;
     min-height: 0;
-    background: var(--layer-default);
+    background: var(--app-bg);
     overflow-y: auto;
     overflow-x: hidden;
     transition: background var(--normal-duration) var(--fast-out-slow-in);
@@ -1587,7 +1587,7 @@ watch(() => props.selectedValue, (val, oldVal) => {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: var(--layer-default);
+    background: var(--app-bg);
     backdrop-filter: var(--flyout-backdrop);
     -webkit-backdrop-filter: var(--flyout-backdrop);
     padding: 12px 24px 8px 24px;
