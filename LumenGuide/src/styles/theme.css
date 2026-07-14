@@ -796,3 +796,39 @@ html.theme-dark {
     -webkit-backdrop-filter: none !important;
   }
 }
+
+/* ===== Waline 评论区配色与文章主题（accent 蓝）统一 =====
+   注意：Waline 的编辑器(.wl-comment) 与 评论列表(.wl-cards) 是 [data-waline]
+   下的【兄弟节点】，所以必须把变量覆盖挂在它们共同的祖先 .waline-box 上，
+   才能同时作用于「上（编辑区）」和「下（列表区）」。绑定的 --accent-base /
+   --accent-hover 随明暗主题自动变化，与文章按钮/链接蓝一致。 */
+.waline-box {
+  --waline-theme-color: var(--accent-base);
+  --waline-active-color: var(--accent-hover);
+  --waline-badge-color: var(--accent-base);
+  --waline-border-color: var(--card-stroke);
+  /* 列表项 / 按钮 hover 带一点蓝调，更融合 */
+  --waline-bg-color-hover: color-mix(in srgb, var(--accent-base) 10%, transparent);
+}
+
+/* 列表区里的昵称 / @提及 链接用文章蓝。
+   注意：以下元素不在此列——保持 Waline 默认灰色，hover 时由自身 :hover 规则
+   引用 --waline-theme-color（已改为蓝）自动变蓝：
+     .wl-action（表情/图片/搜索工具按钮）
+     .wl-reply / .wl-like（评论卡操作：编辑/回复/赞/评论） */
+.waline-box .wl-nick,
+.waline-box .wl-card a,
+.waline-box .at {
+  color: var(--accent-base) !important;
+}
+.waline-box .wl-nick:hover,
+.waline-box .wl-card a:hover {
+  color: var(--accent-hover) !important;
+}
+
+/* 头像角标（管理员 / 认证图标）填充色也用蓝 */
+.waline-box .administrator-icon,
+.waline-box .verified-icon {
+  fill: var(--accent-base) !important;
+  stroke: var(--accent-base) !important;
+}

@@ -1,25 +1,23 @@
 <template>
   <div class="win-copyright-footer">
-    <span>© 2026 全端启萌</span>
-    <span class="sep">·</span>
-    <span>灵感来源于 <a :href="COURSE_URL" target="_blank" rel="noopener">《你缺失的那门计算机课》</a></span>
-    <span class="sep">·</span>
-    <span>CC BY-NC-SA 4.0</span>
-    <span class="sep">·</span>
-    <span>基于 <a :href="LUMENGUIDE_URL" target="_blank" rel="noopener">WinUIonWeb</a></span>
-    <span class="sep">·</span>
-    <span>GPL-3.0</span>
+    <span class="cp-left">© 2026 全端启萌</span><span class="cp-sep"> · </span><span class="cp-right">
+      灵感来源于 <a :href="COURSE_URL" target="_blank" rel="noopener">《你缺失的那门计算机课》</a>
+      <span class="sep">·</span> CC BY-NC-SA 4.0
+      <span class="sep">·</span> 基于 <a :href="LUMENGUIDE_URL" target="_blank" rel="noopener">WinUIonWeb</a>
+      <span class="sep">·</span> GPL-3.0
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
-// 版权说明：首页已内置同款；除「设置」页外，每一页（文章 / 序言）都应展示。
+// 版权说明：与首页页脚同款内容；小屏模式（<640px）下学习首页——两行堆叠居中。
 const COURSE_URL = 'https://www.criwits.top/missing';
 const LUMENGUIDE_URL = 'https://furry-xiyi.github.io/WinUIonWeb/';
 </script>
 
 <style scoped>
 .win-copyright-footer {
+  --brand: #0067C0;
   max-width: 760px;
   margin: 28px auto 8px;
   padding-top: 16px;
@@ -40,13 +38,24 @@ const LUMENGUIDE_URL = 'https://furry-xiyi.github.io/WinUIonWeb/';
   border-bottom: 1px solid color-mix(in srgb, var(--text-secondary) 40%, transparent);
 }
 .win-copyright-footer a:hover {
-  color: var(--accent-base);
-  border-bottom-color: var(--accent-base);
+  color: var(--brand);
+  border-bottom-color: var(--brand);
 }
+
+/* 小屏模式：学习首页页脚——两行堆叠、居中，字号/分隔/间距与首页一致 */
 @media (max-width: 640px) {
   .win-copyright-footer {
-    font-size: 11px;
-    padding: 16px 8px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-size: .8rem;
+    margin-top: 44px;
+    padding: 24px 8px 8px;
+    border-top: 1px solid var(--card-stroke);
+  }
+  .win-copyright-footer .cp-sep {
+    display: none;
   }
 }
 </style>

@@ -1606,7 +1606,7 @@ watch(() => props.selectedValue, (val, oldVal) => {
   }
 
   .win-nav-content-inner {
-    padding: 24px 32px;
+    padding: 24px 16px;
   }
 
   .win-nav-page-header {
@@ -2284,6 +2284,10 @@ watch(() => props.selectedValue, (val, oldVal) => {
     width: 100%;
     max-width: 100%;
     padding-top: env(safe-area-inset-top, 0px);
+    /* 小屏导航背景不透明（实色） */
+    background: var(--app-bg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .win-nav-shell.is-overlay-left .win-nav-content {

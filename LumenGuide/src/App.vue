@@ -56,6 +56,8 @@ import HomePage from './pages/HomePage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
 import ArticlePage from './pages/ArticlePage.vue';
 import PrefacePage from './pages/PrefacePage.vue';
+import FavoritesPage from './pages/FavoritesPage.vue';
+import RecentPage from './pages/RecentPage.vue';
 import { getPageMeta, chapterArticles, chapterGroups } from './data/pages';
 import { useContextMenu } from './composables/useContextMenu';
 
@@ -66,6 +68,8 @@ const pageMap = {
   home: HomePage,
   settings: SettingsPage,
   preface: PrefacePage,
+  favorites: FavoritesPage,
+  recent: RecentPage,
 };
 chapterArticles.forEach(p => {
   pageMap[p.key] = ArticlePage;
@@ -92,6 +96,8 @@ const navMenuItems = [
   { value: 'home', icon: '\uE80F', label: '首页' },
   { value: 'preface', icon: '\uE736', label: '序言' },
   ...chapterNavItems,
+  { value: 'recent', icon: '\uE823', label: '最近访问' },
+  { value: 'favorites', icon: '\uE734', label: '我的收藏' },
 ];
 
 const footerMenuItems = [
@@ -167,9 +173,18 @@ watch(currentPage, (newPage) => {
   try {
     const raw = localStorage.getItem('winui-recent-pages');
     let list = raw ? JSON.parse(raw) : [];
-    list = [newPage, ...list.filter(k => k !== newPage)].slice(0, 10);
+    list = [newPage, ...list.filter(k => k !== newPage)].slice(0, 25);
     localStorage.setItem('winui-recent-pages', JSON.stringify(list));
   } catch { /* ignore */ }
+});
+
+// 切换页面时把持久滚动容器（.win-nav-content）滚到顶部，
+// 使各页（如「最近访问」与「我的收藏」）滚动位置互不干扰、点击进入后均从最上方展示。
+watch(currentPage, () => {
+  nextTick(() => {
+    const sc = document.querySelector('.win-nav-content');
+    if (sc) sc.scrollTop = 0;
+  });
 });
 
 // ========== 全局中文右键菜单（逻辑抽到 useContextMenu composable） ==========

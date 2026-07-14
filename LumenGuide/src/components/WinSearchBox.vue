@@ -75,12 +75,17 @@
                     <span class="win-search-simple-text">{{ item.titlePlain || item.titleZh || item.title }}</span>
                   </div>
                 </div>
+                <WinHyperlinkButton
+                  class="win-search-view-all"
+                  @mousedown.prevent="emit('querySubmitted', { queryText: query, chosenSuggestion: { key: 'recent' } })">
+                  查看全部访问
+                </WinHyperlinkButton>
               </div>
-              <!-- 我的收藏 -->
+              <!-- 精选收藏 -->
               <div v-if="favoriteItems.length" class="win-search-column">
                 <div class="win-search-section-title">
                   <span class="icon">{{ '\uE735' }}</span>
-                  <span>我的收藏</span>
+                  <span>精选收藏</span>
                 </div>
                 <div class="win-search-list-simple">
                   <div
@@ -92,6 +97,11 @@
                     <span class="win-search-simple-text">{{ item.titlePlain || item.titleZh || item.title }}</span>
                   </div>
                 </div>
+                <WinHyperlinkButton
+                  class="win-search-view-all"
+                  @mousedown.prevent="emit('querySubmitted', { queryText: query, chosenSuggestion: { key: 'favorites' } })">
+                  查看全部收藏
+                </WinHyperlinkButton>
               </div>
             </div>
             <div v-if="!recentItems.length && !favoriteItems.length" class="win-search-hero">
@@ -160,6 +170,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import WinButton from './WinButton.vue';
+import WinHyperlinkButton from './WinHyperlinkButton.vue';
 import { searchPages, getPageMeta, pageGroups, type PageMeta } from '../data/pages';
 import { useFavorites } from '../composables/useFavorites';
 
@@ -400,7 +411,7 @@ watch(popupOpen, (v) => {
 });
 
 // 最近访问与收藏
-const { favorites } = useFavorites();
+const { pinnedFavoritesKeys } = useFavorites();
 const recentRefresh = ref(0);
 
 const getRecentHistory = (): string[] => {
@@ -420,11 +431,11 @@ const recentItems = computed(() => {
 });
 
 const favoriteItems = computed(() => {
-  return favorites.value
-    .filter(key => key !== 'home')
+  // 「精选收藏」只显示 6 条（来自 useFavorites 的 pinnedFavoritesKeys：
+  // 用户手动精选优先，未设则回退全部收藏的前 6 个）
+  return pinnedFavoritesKeys.value
     .map(key => getPageMeta(key))
-    .filter((m): m is PageMeta => !!m)
-    .slice(0, 6);
+    .filter((m): m is PageMeta => !!m);
 });
 
 const showFooter = computed(() => !!query.value);
@@ -586,10 +597,14 @@ const chooseSuggestion = (item: PageMeta) => {
  * 回车 / 搜索键 / 点击 QueryIcon 按钮：提交当前高亮项，或仅提交文本
  * 移动端特殊处理：搜索键只收起软键盘，保留搜索面板与已输入内容，不跳转、不清除——
  * 解决「手机上按换行键后直接跳走、搜索内容丢失」的问题（type=search 让键盘键显示为「搜索」）。
+ *
+ * 注意：isSmallScreen 仅按 innerWidth<640 判定，但手机横屏时宽度通常 ≥ 640（如 iPhone 横屏约 844px），
+ *       此时仍应走移动端逻辑（收键盘、不跳转）。因此用 < 1025 补充覆盖横屏手机/小平板。
  */
 const submitQuery = () => {
-  // 移动端：收起键盘、保留搜索面板与内容，不退出、不清除
-  if (isSmallScreen.value) {
+  // 移动端（含横屏手机）：收起键盘、保留搜索面板与内容，不退出、不清除
+  const isTouchMobile = isSmallScreen.value || window.innerWidth < 1025;
+  if (isTouchMobile) {
     inputRef.value?.blur();
     return;
   }
@@ -974,6 +989,15 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 列底部：查看全部（超链接按钮，居中显示） */
+.win-search-column .win-search-view-all {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 12px;
 }
 
 .win-search-hero {

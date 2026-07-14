@@ -59,9 +59,9 @@
           <span>全端启萌</span>
         </div>
         <p class="about-desc">
-          基于 WinUI 3 风格为小白设计的电脑 “ 零 ” 基础教程
+          基于 WinUIonWeb 为小白设计的电脑 “ 零 ” 基础教程
         </p>
-        <div class="about-version">版本 26.07.06</div>
+        <div class="about-version">公厕版 26.07.06</div>
       </div>
     </WinExpander>
   </WinPage>

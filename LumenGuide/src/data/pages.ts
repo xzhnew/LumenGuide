@@ -59,6 +59,14 @@ export function getPageMeta(key: string): PageMeta | undefined {
   return allPages.find(p => p.key === key);
 }
 
+/** 取得某页面所属「章」的显示名（如「开箱与初见」）；非章内文章（首页/序言/设置）返回空串 */
+export function getChapterName(key: string): string {
+  const m = /^ch(\d+)-/.exec(key);
+  if (!m) return '';
+  const group = chapterGroups.find(g => g.key === `ch${m[1]}`);
+  return group?.label || '';
+}
+
 /** 生成导航菜单项（WinNavigationView 格式） */
 export function buildNavMenuItems(): Array<{
   value: string; icon: string; label: string; selectsOnInvoked?: boolean; children?: Array<{ value: string; icon: string; label: string }>
