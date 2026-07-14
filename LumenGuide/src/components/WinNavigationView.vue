@@ -1641,18 +1641,16 @@ watch(() => props.selectedValue, (val, oldVal) => {
       left: 0;
       bottom: 0;
       z-index: 20;
-      /* 先给不支持 color-mix 的老浏览器一个纯色兜底（无透明），再用 color-mix 覆盖 */
       background: var(--app-bg);
-      background: color-mix(in srgb, var(--app-bg) 72%, transparent);
-      backdrop-filter: blur(28px) saturate(1.35);
-      -webkit-backdrop-filter: blur(28px) saturate(1.35);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
     }
 
     html.winui-webview-host .win-nav-shell.is-overlay-left .win-nav-left-panel:not(.is-compact) {
-      background: var(--host-nav-pane-bg);
-      backdrop-filter: blur(28px) saturate(1.35);
-      -webkit-backdrop-filter: blur(28px) saturate(1.35);
+      background: var(--host-nav-pane-bg, var(--app-bg));
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     .win-nav-shell.is-overlay-left .win-nav-left-panel.is-compact {
@@ -2420,13 +2418,11 @@ watch(() => props.selectedValue, (val, oldVal) => {
       margin-left: 0;
     }
 
-    /* LeftMinimal 模式：覆盖面板亚克力效果 */
+    /* LeftMinimal 模式 overlay：面板背景不透明实色（不再用亚克力/毛玻璃） */
     .win-nav-shell.is-left-minimal.is-overlay-left .win-nav-left-panel {
-      /* 先给不支持 color-mix 的老浏览器一个纯色兜底，再用 color-mix 覆盖 */
       background: var(--app-bg);
-      background: color-mix(in srgb, var(--app-bg) 82%, transparent);
-      backdrop-filter: blur(28px) saturate(1.35);
-      -webkit-backdrop-filter: blur(28px) saturate(1.35);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
 /* 小屏（<640px）时 LeftMinimal 顶栏进一步紧凑 */
