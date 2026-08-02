@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, watch, provide, computed, nextTick } from 'vue';
+import { ref, watch, provide, computed, nextTick, onMounted } from 'vue';
 import WinTitleBar from './components/WinTitleBar.vue';
 import WinNavigationView from './components/WinNavigationView.vue';
 import WinSearchBox from './components/WinSearchBox.vue';
@@ -58,7 +58,7 @@ import ArticlePage from './pages/ArticlePage.vue';
 import PrefacePage from './pages/PrefacePage.vue';
 import FavoritesPage from './pages/FavoritesPage.vue';
 import RecentPage from './pages/RecentPage.vue';
-import { getPageMeta, chapterArticles, chapterGroups } from './data/pages';
+import { getPageMeta, chapterArticles, chapterGroups, allPages } from './data/pages';
 import { useContextMenu } from './composables/useContextMenu';
 
 // ========== 页面路由表 ==========
@@ -212,6 +212,62 @@ const {
 const onContextMenuRequest = ({ clientX, clientY, target }) => {
   openContextMenu(clientX, clientY, target);
 };
+
+// ========== 锚点 hash 跳转（网址 #内容 直达） ==========
+// 支持两种链接格式：
+//   1) #page/anchor  —— 跨页跳转，如 #ch1-2/why  （先切到 ch1-2，再滚到 id=why 的小节）
+//   2) #anchor      —— 当前页内跳转，如 #audience（仅当它不是某个页面 key 时）
+// 页面 key 集合用于区分「跳页面」与「页内锚点」。
+const knownPageKeys = new Set([
+  ...allPages.map((p) => p.key),
+  ...chapterArticles.map((a) => a.key),
+]);
+
+function parseHash() {
+  const raw = decodeURIComponent(location.hash.replace(/^#/, ''));
+  if (!raw) return null;
+  if (raw.includes('/')) {
+    const parts = raw.split('/');
+    return { page: parts[0] || null, anchor: parts[1] || null };
+  }
+  // 无斜杠：恰好是页面 key 则跳到该页顶部；否则当作当前页锚点
+  if (knownPageKeys.has(raw)) return { page: raw, anchor: null };
+  return { page: null, anchor: raw };
+}
+
+// 滚动到目标 id（用浏览器原生 scrollIntoView，由它自己算最终位置，最稳）。
+// 用重试等待：文章/序言是异步渲染的，标题 id 可能稍晚出现，最多等 ~1.5s。
+function scrollToAnchor(anchor) {
+  if (!anchor) return;
+  let tries = 0;
+  const tryScroll = () => {
+    const el = document.getElementById(anchor);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (tries++ < 30) {
+      setTimeout(tryScroll, 50);
+    }
+  };
+  tryScroll();
+}
+
+function handleHashNavigation() {
+  const target = parseHash();
+  if (!target) return;
+  const { page, anchor } = target;
+  if (page && page !== currentPage.value && pageMap[page]) {
+    currentPage.value = page; // 跨页：先切到目标页（组件会重挂载）
+  }
+  // 等页面切换/渲染后，再滚动到锚点。
+  // 注意：App 与 ArticlePage 在切页时会把 .win-nav-content 滚到顶部，
+  // 这里用 nextTick + 短延时让锚点滚动在「滚到顶部」之后生效（重试循环也会兜底）。
+  nextTick(() => setTimeout(() => scrollToAnchor(anchor), 60));
+}
+
+onMounted(() => {
+  handleHashNavigation();
+  window.addEventListener('hashchange', handleHashNavigation);
+});
 </script>
 
 <style>

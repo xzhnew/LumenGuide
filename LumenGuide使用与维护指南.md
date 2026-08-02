@@ -1,7 +1,7 @@
 # LumenGuide 使用与维护指南
 
 > 基于 WinUIonWeb 设计的 Vue 3 内容平台。本文档合并「常用控件教程」与「网站维护指南」，**所有控件 API 均按当前代码（`src/components/Win*.vue`）逐文件核对**。
-> 最后更新：2026-07-13（MD 驱动篇章架构 + 浮层不透明实色材质 + 自托管图标字体）。
+> 最后更新：2026-08-02（本地运行 / 构建说明 + 锚点分享链接 `{#id}` / `#页面/锚点` + 干净可分享标题 id）。
 
 ---
 
@@ -591,9 +591,28 @@ keywords: [开箱, 新手, setup]
 
 改该章**任一篇** `.md` 的 `chapterName` / `chapterIcon` 字段即可（同一章的多篇共享章名/章图标，取第一篇的值；无则回落默认）。
 
-### 渲染与锚点
+### 渲染与锚点（分享链接）
 
-`ArticlePage.vue` 按 `pageKey`（如 `ch1-1`）加载对应 `.md` 并排版；导航点某章 → 进入文章页并锚点定位到该节。评论区按 `pageKey` 独立（见第六部分）。
+`ArticlePage.vue` 按 `pageKey`（如 `ch1-1`）加载对应 `.md` 并排版；导航点某章 → 进入文章页。每篇文章 / 序言的 `h2` / `h3` 标题在**构建期**就被分配了 `id`（见 `scripts/build-md.mjs` 的 `addHeadingIds`），所以可以直接拿来做分享锚点。
+
+**给标题指定干净短链（推荐）**：在 `.md` 标题末尾写 `{#任意英文id}`，例如：
+
+```markdown
+## 第一步：认识外观 {#first-look}
+```
+
+构建后该标题的 `id` 就是 `first-look`，且 `{#first-look}` 这段文字**不会**显示出来（被构建脚本剥掉）。没写 `{#id}` 的标题，会按文字自动生成 slug（中文标题即中文 id，如 `为什么会有这个《全端启萌》项目`），也能直接用，只是不够短。
+
+**链接格式（在网址后面加 `#`）**：
+
+| 想要的效果 | 链接写法 | 说明 |
+| --- | --- | --- |
+| 当前页内跳到某节 | `…/LumenGuide/#audience` | 仅当 `audience` 不是页面 key 时当作锚点 |
+| 跨页跳转（先切页再滚到锚点） | `…/LumenGuide/#ch1-1/first-look` | 格式 `#页面key/锚点id`；如 `#preface/roadmap` |
+| 直接跳到某页顶部 | `…/LumenGuide/#preface`、`…/LumenGuide/#ch1-1` | 恰好等于某个页面 key 时 |
+
+> 应用启动时会读 `location.hash` 并滚动到对应标题；站内改 hash 也会实时定位（`App.vue` 的 `handleHashNavigation` + `hashchange` 监听）。滚动容器是 `.win-nav-content`，锚点滚动已处理「切页先滚到顶部」的冲突。
+> 序言页（`PrefacePage.vue`）的 5 个 h2 已写好干净 id：`origin` / `audience` / `roadmap` / `how-to-use` / `cross-platform`，可直接用 `#preface/audience` 这类链接分享。
 
 > 旧版用 `Volume{n}.vue` + `chapters.ts` 里的 `chapterPlan` 写死章结构，现已**废弃删除**；若文档/记忆里还提到 `Volume*.vue` / `chapterPlan`，一律以本节的 MD 驱动为准。
 
@@ -624,32 +643,62 @@ import WinPage from '../components/WinPage.vue';
 
 ---
 
-## 四、运行与构建
+## 四、本地运行与构建
+
+### 1. 安装依赖（首次 / 换机器）
 
 ```powershell
 cd D:\new\LumenGuide\LumenGuide
+npm install
+```
 
-# 开发服务器（热更新）
+### 2. 启动开发服务器（热更新，本地预览）
+
+```powershell
 npm run dev
+```
 
-# 生产构建（vue-tsc 类型检查 + vite 打包，产物在 dist/）
-npm run build
+- 这条命令会**先**跑 `build:md`（把 `src/content/*.md` 预渲染进 `src/data/markdownArticles.ts`），**再**启动 Vite。
+- 本地地址：**http://localhost:63179/LumenGuide/**
+- 端口固定 `63179`（`vite.config.ts` 的 `server.port`）；base 固定 `/LumenGuide/`。两者都别改，否则本地与线上路径不一致。
+- 改 `.md` / `.vue` 会热更新；锚点 / 分享链接改完刷新即可。
+- 想验证分享锚点：浏览器打开 `http://localhost:63179/LumenGuide/#preface/audience`，应自动切到序言页并滚到「这本书适合谁」。
+
+### 3. 生产构建
+
+```powershell
+npm run build     # = build:md + vue-tsc 类型检查 + vite 打包，产物在 dist/
 ```
 
 构建检查若报类型错误，按提示修复后重试。**修改 `src/content/*.md` 后必须重新 `npm run build`** 才能更新线上（dev 模式自动）。
 
-### 部署到 GitHub Pages
+### 4. 部署到 GitHub Pages（更新线上）
 
-后端是 GitHub Pages（`gh-pages` 分支），对外域名 `blog.oxzh.top/LumenGuide`。更新线上两步：
+线上是 GitHub Pages，由 **`dist/` 独立 git 仓库**的 `gh-pages` 分支提供，对外域名 `blog.oxzh.top/LumenGuide`。
 
 ```bash
 npm run build
-cd dist && git init && touch .nojekyll && cp index.html 404.html \
-  && git add -A && git commit -m "本次更新文章基本由AI生成" \
-  && git push -f git@github.com:xzhnew/LumenGuide.git HEAD:gh-pages
+cd dist
+git checkout HEAD -- .nojekyll 404.html   # 恢复被 vite 清空的静态文件
+git add -A
+git commit -m "本次更新文章基本由AI生成"
+git push origin master:gh-pages           # dist 仓库当前分支是 master，推到远端 gh-pages
 ```
 
-源码提交：`git commit -m "本次更新文章基本由AI生成"`（固定提交信息）。
+> ⚠️ 关键坑：`vite build` 每次都会**清空 `dist/` 并删掉 `.nojekyll` / `404.html`**。这两个文件必须先从 `dist` 自己的 git `HEAD` 恢复（`git checkout HEAD -- ...`）再提交，否则 GitHub Pages 会因 Jekyll 处理 `_` 前缀目录或缺失 404 而样式/路由异常。
+> `dist/` 是**独立仓库**，不要在外层源码仓库里 `git add dist`。
+
+### 5. 源码提交（GitHub 源仓库）
+
+外层 `D:\new\LumenGuide\` 是源码 git 仓库（`main` 分支）。改完功能 / 文档后提交：
+
+```bash
+git add -A
+git commit -m "本次更新文章基本由AI生成"   # 固定提交信息
+git push origin main
+```
+
+> `src/data/markdownArticles.ts` 是 `build:md` 生成的，可提交也可不提交（每次 build 会覆盖）；若提交，注意它体积较大且频繁变动。
 
 ---
 

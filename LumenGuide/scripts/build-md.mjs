@@ -30,6 +30,61 @@ const md = new MarkdownIt({
   breaks: false,     // 末尾换行不强制 <br>
 });
 
+// ===== 标题 id 插件（支持干净可分享锚点） =====
+// 规则：
+//   1) 标题末尾写 {#clean-id} 可指定自定义锚点，如：  ## 章节标题 {#why}
+//      渲染时会自动剥掉 {#...} 这段文字，只留下干净 id（即网址 #... 里填的内容）。
+//   2) 没写 {#id} 时，按标题文字自动生成 slug：小写、空白转 -、保留 中英文/数字/-。
+// 好处：id 在「构建期」就写进 HTML（而不是运行时临时挂），稳定、可分享、可预测。
+function slugify(text) {
+  return String(text ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-一-鿿]/g, '') // 保留 字母/数字/_/-/中文
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function addHeadingIds(md) {
+  const defaultRender =
+    md.renderer.rules.heading_open ||
+    ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
+
+  md.renderer.rules.heading_open = function (tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    const inline = tokens[idx + 1];
+    let rawText = '';
+    if (inline && inline.type === 'inline' && Array.isArray(inline.children)) {
+      rawText = inline.children.map((c) => c.content || '').join('');
+    }
+
+    let id = null;
+    const m = rawText.match(/\s*\{#([A-Za-z0-9_\-]+)\}\s*$/);
+    if (m) {
+      id = m[1];
+      // 剥掉标题文字里末尾的 {#id}，避免它作为正文显示出来
+      const suffix = m[0];
+      if (Array.isArray(inline.children)) {
+        for (let i = inline.children.length - 1; i >= 0; i--) {
+          const c = inline.children[i];
+          if (c.type === 'text' && typeof c.content === 'string' && c.content.endsWith(suffix)) {
+            c.content = c.content.slice(0, c.content.length - suffix.length);
+            break;
+          }
+        }
+      }
+    } else {
+      id = slugify(rawText);
+    }
+
+    if (id) token.attrSet('id', id);
+    return defaultRender(tokens, idx, options, env, self);
+  };
+}
+
+addHeadingIds(md);
+
 // 递归收集目录下所有 .md 文件
 function walk(dir) {
   const out = [];
