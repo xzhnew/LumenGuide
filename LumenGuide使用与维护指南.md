@@ -1,7 +1,7 @@
 # LumenGuide 使用与维护指南
 
 > 基于 WinUIonWeb 设计的 Vue 3 内容平台。本文档合并「常用控件教程」与「网站维护指南」，**所有控件 API 均按当前代码（`src/components/Win*.vue`）逐文件核对**。
-> 最后更新：2026-08-02（本地运行 / 构建说明 + 锚点分享链接 `{#id}` / `#页面/锚点` + 干净可分享标题 id）。
+> 最后更新：2026-08-02（本地运行 / 构建说明 + 锚点分享链接 `{#id}` / `#页面/锚点` + 浏览时网址自动同步 + 「复制本节链接」按钮）。
 
 ---
 
@@ -613,6 +613,10 @@ keywords: [开箱, 新手, setup]
 
 > 应用启动时会读 `location.hash` 并滚动到对应标题；站内改 hash 也会实时定位（`App.vue` 的 `handleHashNavigation` + `hashchange` 监听）。滚动容器是 `.win-nav-content`，锚点滚动已处理「切页先滚到顶部」的冲突。
 > 序言页（`PrefacePage.vue`）的 5 个 h2 已写好干净 id：`origin` / `audience` / `roadmap` / `how-to-use` / `cross-platform`，可直接用 `#preface/audience` 这类链接分享。
+
+**网址会随浏览自动同步（反向写回）**：进入某篇文章时，网址自动变成 `#页面key`（如 `#ch1-1`）；向下滚动阅读时，网址进一步细化成 `#页面key/小节id`（如 `#ch1-1/first-look`），靠 `ArticleToc.vue` 的 scrollspy（监听 `.win-nav-content` 滚动）用 `history.replaceState` 写回，不污染浏览器历史、也不触发 `hashchange` 死循环。回到首页则清除片段。所以**别人发你的链接带 `#` 能直接跳；你自己在站里逛，地址栏也会实时反映当前位置**。
+
+**一键复制分享链接**：右侧「本文内容」目录头部有一个链状图标按钮（「复制本节链接」），点击即把「当前所在小节」的完整链接（`页面origin + pathname + #页面/小节`）写入剪贴板，并显示「已复制链接 ✓」提示；每个目录条目 hover 时右侧还会浮出同款图标，点它可复制**该小节**的链接（适合不想滚动定位的场景）。复制优先用 `navigator.clipboard`，非 https / 旧浏览器自动降级到 `textarea + execCommand` 兜底。
 
 > 旧版用 `Volume{n}.vue` + `chapters.ts` 里的 `chapterPlan` 写死章结构，现已**废弃删除**；若文档/记忆里还提到 `Volume*.vue` / `chapterPlan`，一律以本节的 MD 驱动为准。
 
