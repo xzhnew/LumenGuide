@@ -235,6 +235,16 @@ function parseHash() {
   return { page: null, anchor: raw };
 }
 
+// 用 replaceState 改网址 # 片段（不触发 hashchange、不污染历史记录）。
+// 切页时只写「页码」(#ch1-1)，小节(#ch1-1/first-look)由 ArticleToc 滚动时细化。
+// 传入空串则清除片段（回到首页用）。
+function setHash(hash) {
+  const target = hash ? '#' + hash : '';
+  const newUrl = location.pathname + location.search + target;
+  if (location.hash === target) return;
+  history.replaceState(null, '', newUrl);
+}
+
 // 滚动到目标 id（用浏览器原生 scrollIntoView，由它自己算最终位置，最稳）。
 // 用重试等待：文章/序言是异步渲染的，标题 id 可能稍晚出现，最多等 ~1.5s。
 function scrollToAnchor(anchor) {
@@ -267,6 +277,20 @@ function handleHashNavigation() {
 onMounted(() => {
   handleHashNavigation();
   window.addEventListener('hashchange', handleHashNavigation);
+});
+
+// 进入页面时把网址同步为 #页面（小节由 ArticleToc 滚动时细化成 #页面/小节）。
+// 首页清除锚点（避免出现陈旧的 #ch1-1/xxx）。home 也在 knownPageKeys 中，
+// 故先单独判断，确保首页 URL 干净。
+watch(currentPage, (v) => {
+  if (!v || v === '__ping__') return;
+  if (v === 'home') {
+    setHash('');
+    return;
+  }
+  if (knownPageKeys.has(v)) {
+    setHash(v);
+  }
 });
 </script>
 
