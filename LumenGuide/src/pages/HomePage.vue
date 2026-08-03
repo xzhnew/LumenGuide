@@ -19,8 +19,8 @@
 
     <!-- ====== 九大章 ====== -->
     <div class="section-head">
-      <h2 class="section-title"><span class="icon section-icon">{{ '\uE8D9' }}</span>九大章</h2>
-      <span class="section-sub">从开箱到精通，九步走进电脑世界</span>
+      <h2 class="section-title"><span class="icon section-icon">{{ '\uE8D9' }}</span>大章节</h2>
+      <span class="section-sub">从开箱到精通，一步一步走进电脑世界</span>
     </div>
     <div class="chapter-grid">
       <button
@@ -67,7 +67,7 @@
         <div v-if="!featuredPages.length" class="sidebar-empty">暂无收藏</div>
         <ul v-else class="sidebar-list">
           <li v-for="item in featuredPages" :key="item.key" class="sidebar-item" @click="goPage(item.key)">
-            <span class="icon sidebar-dot">{{ '\uE734' }}</span>
+            <span class="icon sidebar-dot">{{ item.icon }}</span>
             <span class="sidebar-text">{{ item.titlePlain || item.titleZh || item.title }}</span>
           </li>
         </ul>

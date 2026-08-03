@@ -204,6 +204,83 @@ onUnmounted(() => {
   background: transparent;
   padding: 0;
 }
+
+/* ===== 代码块「复制」控件（build-md 给 ``` 代码块包 .code-block 注入按钮） ===== */
+.article :deep(.code-block) {
+  position: relative;
+  margin: 0 0 14px;
+}
+.article :deep(.code-block pre) {
+  margin: 0;
+  padding: 14px 44px 14px 16px;  /* 右侧留 44px 给复制按钮，避免遮挡代码 */
+}
+.article :deep(.code-lang) {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  z-index: 2;
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.article :deep(.copy-code-btn) {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--card-stroke);
+  border-radius: 6px;
+  background: var(--flyout-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  opacity: 0.9;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+.article :deep(.copy-code-btn:hover) {
+  background: var(--subtle-pressed);
+  color: var(--text-primary);
+  opacity: 1;
+}
+.article :deep(.copy-code-btn .ic-done) {
+  display: none;
+}
+.article :deep(.copy-code-btn.copied) {
+  color: var(--accent-base);
+  opacity: 1;
+}
+.article :deep(.copy-code-btn.copied .ic-copy) {
+  display: none;
+}
+.article :deep(.copy-code-btn.copied .ic-done) {
+  display: block;
+}
+
+/* 行内代码：点文本即复制（控件即代码本身） */
+.article :deep(code.inline-code) {
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.article :deep(code.inline-code:hover) {
+  background: var(--subtle-pressed);
+  color: var(--text-primary);
+}
+.article :deep(code.inline-code.copied) {
+  color: var(--accent-base);
+  background: var(--subtle-secondary);
+}
+.article :deep(code.inline-code.copied)::after {
+  content: ' ✓';
+}
 .article :deep(img) {
   max-width: 100%;
   border-radius: 8px;

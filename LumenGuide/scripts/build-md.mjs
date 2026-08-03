@@ -85,6 +85,59 @@ function addHeadingIds(md) {
 
 addHeadingIds(md);
 
+// ===== 代码「复制」控件 =====
+// 三种代码都支持复制：
+//   1) ``` 围栏代码块（独立成块）       -> 包 .code-block + 右上角浮动「复制」按钮
+//   2) 缩进代码块（列表里 4 空格缩进）  -> 同上
+//   3) 行内代码（`xxx`，夹在句子里）    -> 不插按钮（避免打断句子），改为「点文本即复制」，
+//      加 class="inline-code" + title，由 App.vue 全局点击委托处理。
+// 真正的复制行为在 App.vue：读 .code-block 下 <pre><code> 或行内 <code> 文本写入剪贴板。
+function addCodeCopyButton(md) {
+  const COPY_ICON =
+    '<svg class="ic-copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+    '<path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+  const DONE_ICON =
+    '<svg class="ic-done" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+    '<path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+
+  const wrapBlock = (inner, langLabel) =>
+    `<div class="code-block">` +
+    langLabel +
+    `<button class="copy-code-btn" type="button" aria-label="复制代码" title="复制代码">` +
+    COPY_ICON +
+    DONE_ICON +
+    `</button>` +
+    inner +
+    `</div>`;
+
+  const defaultFence =
+    md.renderer.rules.fence ||
+    ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
+  md.renderer.rules.fence = function (tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    const info = token.info ? token.info.trim() : '';
+    const lang = (info.split(/\s+/)[0] || '').toLowerCase();
+    const langLabel = lang ? `<span class="code-lang">${md.utils.escapeHtml(lang)}</span>` : '';
+    return wrapBlock(defaultFence(tokens, idx, options, env, self), langLabel);
+  };
+
+  const defaultBlock =
+    md.renderer.rules.code_block ||
+    ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
+  md.renderer.rules.code_block = function (tokens, idx, options, env, self) {
+    return wrapBlock(defaultBlock(tokens, idx, options, env, self), '');
+  };
+
+  // 行内代码：加 class + title（点文本即复制，控件即代码本身）
+  md.renderer.rules.code_inline = function (tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    const code = md.utils.escapeHtml(token.content);
+    return `<code class="inline-code" title="点击复制" data-copy>${code}</code>`;
+  };
+}
+
+addCodeCopyButton(md);
+
 // 递归收集目录下所有 .md 文件
 function walk(dir) {
   const out = [];
