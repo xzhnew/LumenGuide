@@ -12,6 +12,15 @@
           :aria-label="pageTheme === 'dark' ? '切换到浅色主题' : '切换到深色主题'">
           <span class="icon">{{ '\uE793' }}</span>
         </WinButton>
+        <!-- 复制本文地址 -->
+        <WinButton
+          subtle
+          @click="copyPageUrl"
+          style="width: 32px; height: 32px; padding: 0; min-width: 0;"
+          aria-label="复制本文地址"
+          title="复制本文地址">
+          <span class="icon">{{ copied ? '\uE73E' : '\uE71B' }}</span>
+        </WinButton>
         <!-- 收藏 -->
         <WinToggleButton
           v-model="isFavoriteState"
@@ -28,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch } from 'vue';
+import { ref, computed, inject, watch, onUnmounted } from 'vue';
 import WinButton from './WinButton.vue';
 import WinToggleButton from './WinToggleButton.vue';
 import { useFavorites } from '../composables/useFavorites';
@@ -75,6 +84,37 @@ const toggleTheme = () => {
   const idx = order.indexOf(themeSetting.value);
   themeSetting.value = order[(idx + 1) % 3];
 };
+
+// 复制本文地址
+const copied = ref(false);
+let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+const copyPageUrl = async () => {
+  const url = window.location.href;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copied.value = true;
+    if (copyTimer) clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { copied.value = false; }, 1500);
+  } catch {
+    copied.value = false;
+  }
+};
+
+onUnmounted(() => {
+  if (copyTimer) clearTimeout(copyTimer);
+});
 </script>
 
 <style scoped>
@@ -88,9 +128,9 @@ const toggleTheme = () => {
   font-weight: 600;
   margin: 0 0 8px 0;
   color: var(--text-primary);
-  /* 给右上角绝对定位的操作按钮（主题/收藏，约 72px 宽）留出空间，
+  /* 给右上角绝对定位的操作按钮（主题/复制/收藏，约 104px 宽）留出空间，
      避免窄屏下长标题与按钮重叠 */
-  padding-right: 76px;
+  padding-right: 108px;
 }
 
 .win-page-desc {

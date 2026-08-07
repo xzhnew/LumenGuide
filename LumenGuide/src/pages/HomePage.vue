@@ -76,7 +76,7 @@
 
     <!-- ====== 页脚（双开源协议） ====== -->
     <footer class="site-footer">
-      <span>© 2026 全端启萌</span>
+      <span>© 2026–{{ currentYear }} <a :href="GITHUB_URL" target="_blank" rel="noopener">全端启萌</a></span>
       <span class="license">
         灵感来源于
         <a :href="COURSE_URL" target="_blank" rel="noopener">《你缺失的那门计算机课》</a>
@@ -282,6 +282,8 @@ const featuredPages = computed(() =>
 
 const COURSE_URL = 'https://www.criwits.top/missing';
 const LUMENGUIDE_URL = 'https://furry-xiyi.github.io/WinUIonWeb/';
+const GITHUB_URL = 'https://github.com/xzhnew/LumenGuide';
+const currentYear = new Date().getFullYear();
 </script>
 
 <style scoped>

@@ -1,6 +1,6 @@
 <template>
   <div class="win-copyright-footer">
-    <span class="cp-left">© 2026 全端启萌</span><span class="cp-sep"> · </span><span class="cp-right">
+    <span class="cp-left">© 2026 <a :href="GITHUB_URL" target="_blank" rel="noopener">全端启萌</a></span><span class="cp-sep"> · </span><span class="cp-right">
       灵感来源于 <a :href="COURSE_URL" target="_blank" rel="noopener">《你缺失的那门计算机课》</a>
       <span class="sep">·</span> CC BY-NC-SA 4.0
       <span class="sep">·</span> 基于 <a :href="LUMENGUIDE_URL" target="_blank" rel="noopener">WinUIonWeb</a>
@@ -13,6 +13,7 @@
 // 版权说明：与首页页脚同款内容；小屏模式（<640px）下学习首页——两行堆叠居中。
 const COURSE_URL = 'https://www.criwits.top/missing';
 const LUMENGUIDE_URL = 'https://furry-xiyi.github.io/WinUIonWeb/';
+const GITHUB_URL = 'https://github.com/xzhnew/LumenGuide';
 </script>
 
 <style scoped>
