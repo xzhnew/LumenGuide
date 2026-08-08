@@ -11,6 +11,9 @@
         class="win-search-input"
         type="search"
         enterkeyhint="search"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
         :placeholder="placeholderText"
         v-model="query"
         @focus="onFocus"
@@ -280,10 +283,9 @@ const query = computed({
 });
 
 const showPopup = computed(() => {
-  // 小屏：弹窗显隐由 popupOpen 独立控制（与输入框焦点解耦），键盘收起也不关闭
-  if (isSmallScreen.value) return popupOpen.value || props.isSuggestionListOpen;
-  // 桌面 / 顶部 / 自动：聚焦即展开，失焦即收起
-  return isFocused.value || props.isSuggestionListOpen;
+  // 桌面与移动端统一：弹窗显隐由 popupOpen 独立控制（与输入框焦点解耦），
+  // 这样桌面端可以在“第一次点击主内容区”时保持弹窗打开，第二次点击才关闭。
+  return popupOpen.value || props.isSuggestionListOpen;
 });
 
 watch(isFocused, (v) => emit('update:isSuggestionListOpen', v));
@@ -573,8 +575,7 @@ const onKeydown = (e: KeyboardEvent) => {
     submitQuery(); // 回车 = 点击 QueryIcon 按钮
   } else if (e.key === 'Escape') {
     e.preventDefault();
-    if (isSmallScreen.value) closePopup(); // 小屏：Esc 直接关闭弹窗
-    else inputRef.value?.blur();
+    closePopup(); // 桌面与移动一致：Esc 直接关闭弹窗
   }
 };
 
@@ -587,7 +588,7 @@ const chooseSuggestion = (item: PageMeta) => {
   // UpdateTextOnSelect —— 选中后是否把文本写回输入框
   query.value = props.updateTextOnSelect ? (item.titleZh || item.title || '') : '';
   emit('querySubmitted', { queryText: query.value, chosenSuggestion: item });
-  if (isSmallScreen.value) popupOpen.value = false; // 小屏：选中后关闭弹窗
+  popupOpen.value = false; // 桌面与移动一致：选中后关闭弹窗
   isFocused.value = false;
   inputRef.value?.blur();
 };
@@ -613,6 +614,7 @@ const submitQuery = () => {
     chooseSuggestion(item);
   } else {
     emit('querySubmitted', { queryText: query.value, chosenSuggestion: null });
+    popupOpen.value = false; // 桌面：提交后关闭弹窗
     isFocused.value = false;
     inputRef.value?.blur();
   }
@@ -620,15 +622,34 @@ const submitQuery = () => {
 
 const clearQuery = () => {
   query.value = '';
-  inputRef.value?.focus();
+  closePopup();
 };
 
-// 小屏：监听全局 pointerdown，统计弹窗/搜索框之外的点击次数（点两次才关闭）
+// 监听全局 pointerdown，统计弹窗/搜索框之外的点击次数（点两次才关闭）
+// 小屏：任意区域（除弹窗/搜索框）点两次关闭；桌面：仅在主内容区（.win-nav-content）点两次关闭。
 const onDocPointerDown = (e: PointerEvent) => {
-  if (!isSmallScreen.value || !popupOpen.value) return;
   const t = e.target as HTMLElement;
-  // 点在弹窗内部或搜索框内部：不算“外部点击”，计数器清零
+  if (isSmallScreen.value) {
+    if (!popupOpen.value) return;
+    // 点在弹窗内部或搜索框内部：不算“外部点击”，计数器清零
+    if (popupRef.value?.contains(t) || rootRef.value?.contains(t)) {
+      outsideTapCount = 0;
+      return;
+    }
+    outsideTapCount += 1;
+    if (outsideTapCount >= 2) closePopup();
+    return;
+  }
+
+  // 桌面版：点击主内容区（.win-nav-content）两次关闭弹窗；第一次保持打开，第二次关闭。
+  // 弹窗已与输入框焦点解耦（popupOpen 控制显隐），故第一次点击不会因失焦而关闭。
+  if (!showPopup.value) return;
   if (popupRef.value?.contains(t) || rootRef.value?.contains(t)) {
+    outsideTapCount = 0;
+    return;
+  }
+  const contentEl = document.querySelector('.win-nav-content');
+  if (!contentEl?.contains(t)) {
     outsideTapCount = 0;
     return;
   }
@@ -653,7 +674,7 @@ onMounted(() => {
   document.addEventListener('keydown', globalKeyHandler);
 
   // 小屏：全局监听“弹窗外点击”，用于两次点击关闭弹窗
-  document.addEventListener('pointerdown', onDocPointerDown);
+  document.addEventListener('pointerdown', onDocPointerDown, true);
 
   // 实时跟踪是否小屏：切换桌面/顶部/自动 ↔ 小屏时同步刷新，离开小屏时重置拖动高度
   widthChangeHandler = () => {
@@ -702,7 +723,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (globalKeyHandler) document.removeEventListener('keydown', globalKeyHandler);
-  document.removeEventListener('pointerdown', onDocPointerDown);
+  document.removeEventListener('pointerdown', onDocPointerDown, true);
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);
     window.removeEventListener('scroll', resizeHandler, true);
