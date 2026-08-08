@@ -75,7 +75,6 @@
                     class="win-search-simple-item"
                     @mousedown.prevent="chooseSuggestion(item)">
                     <span class="icon win-search-simple-icon">{{ item.icon }}</span>
-                    <span class="win-search-prefix">{{ prefixOf(item.titlePlain || item.titleZh || item.title) }}</span>
                     <span class="win-search-simple-text">{{ item.titlePlain || item.titleZh || item.title }}</span>
                   </div>
                 </div>
@@ -98,7 +97,6 @@
                     class="win-search-simple-item"
                     @mousedown.prevent="chooseSuggestion(item)">
                     <span class="icon win-search-simple-icon">{{ item.icon }}</span>
-                    <span class="win-search-prefix">{{ prefixOf(item.titlePlain || item.titleZh || item.title) }}</span>
                     <span class="win-search-simple-text">{{ item.titlePlain || item.titleZh || item.title }}</span>
                   </div>
                 </div>
@@ -121,8 +119,8 @@
             <div v-if="!flatSuggestions.length" class="win-search-no-results">
               <div class="win-search-no-results-icon"><span class="icon">{{ '\uE721' }}</span></div>
               <div class="win-search-no-results-body">
-                <span class="win-search-prefix win-search-no-results-prefix">{{ prefixOf(query) }}</span>
-                <span>没有匹配 <strong>"{{ query }}"</strong> 的内容</span>
+                <span class="win-search-no-results-query">{{ query }}</span>
+                <span>没有匹配结果</span>
               </div>
             </div>
             <template v-else>
@@ -144,7 +142,6 @@
                     @mousedown.prevent="chooseSuggestion(item)"
                     @mouseenter="setHighlight(flatIndexOf(group, idx))">
                     <div class="win-sug-icon"><span class="icon">{{ item.icon }}</span></div>
-                    <div class="win-sug-prefix">{{ prefixOf(item.titleZh || item.title) }}</div>
                     <div class="win-sug-text">
                       <div class="win-sug-title">{{ item.titleZh || item.title }}</div>
                       <div class="win-sug-subtitle">{{ getSnippet(item, query) }}</div>
@@ -214,12 +211,6 @@ function getSnippet(item: PageMeta, query: string): string {
 }
 
 /**
- * 生成建议条目前的 1.8 字预览：取标题前两个字符，由 CSS 截到 1.8em 宽度，
- * 实现「完整 1 个字 + 第二个字约 80%」的视觉效果。
- */
-const prefixOf = (text?: string): string => (text || '').slice(0, 2);
-
-/**
  * WinSearchBox —— 对标 WinUI 3 的 Microsoft.UI.Xaml.Controls.AutoSuggestBox
  *
  * 官方字段名映射：
@@ -255,7 +246,8 @@ const props = defineProps({
   isSuggestionListOpen: { type: Boolean, default: false },
   updateTextOnSelect: { type: Boolean, default: true },
   fullWidth: { type: Boolean, default: false },
-  navMode: { type: String, default: 'left' } // 'left' | 'top'
+  navMode: { type: String, default: 'left' }, // 'left' | 'top'
+  activePage: { type: String, default: '' }
 });
 
 const emit = defineEmits([
@@ -298,6 +290,11 @@ const showPopup = computed(() => {
   // 桌面与移动端统一：弹窗显隐由 popupOpen 独立控制（与输入框焦点解耦），
   // 这样桌面端可以在“第一次点击主内容区”时保持弹窗打开，第二次点击才关闭。
   return popupOpen.value || props.isSuggestionListOpen;
+});
+
+// 页面切换（如移动端点击左侧导航）时主动收起搜索弹窗，避免跳转后弹窗仍覆盖在新页面上
+watch(() => props.activePage, () => {
+  if (popupOpen.value) closePopup();
 });
 
 watch(isFocused, (v) => emit('update:isSuggestionListOpen', v));
@@ -1016,37 +1013,6 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   text-align: center;
 }
 
-/* 1.8 字前缀预览：完整 1 字 + 第二个字约 80% */
-.win-search-prefix,
-.win-sug-prefix {
-  display: inline-block;
-  width: 1.8em;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: clip;
-  flex-shrink: 0;
-  color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 1.4;
-  text-align: left;
-}
-
-.win-sug-prefix {
-  font-size: 14px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.win-search-no-results-body {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.win-search-no-results-prefix {
-  color: var(--text-tertiary);
-}
-
 .win-search-simple-text {
   font-size: 13px;
   color: var(--text-primary);
@@ -1171,6 +1137,9 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .win-sug-subtitle {
@@ -1220,6 +1189,17 @@ defineExpose({ focus: () => inputRef.value?.focus() });
 .win-search-no-results-icon .icon {
   font-size: 24px;
   color: var(--text-tertiary);
+}
+
+.win-search-no-results-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.win-search-no-results-query {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 /* 底部快捷键提示 */

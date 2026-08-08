@@ -13,6 +13,7 @@
           v-model:text="searchQuery"
           placeholder-text="搜索..."
           nav-mode="left"
+          :active-page="currentPage"
           @querySubmitted="onQuerySubmitted" />
       </template>
 
@@ -23,6 +24,7 @@
             v-model:text="searchQuery"
             placeholder-text="搜索..."
             nav-mode="top"
+            :active-page="currentPage"
             @querySubmitted="onQuerySubmitted" />
         </div>
       </template>
