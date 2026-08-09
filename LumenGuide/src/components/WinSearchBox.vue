@@ -351,11 +351,15 @@ const updatePopupPos = () => {
   }
 };
 
-// 移动端键盘高度推算：keyboardH = 视口底部以下被遮挡的部分（≈键盘高度）
+// 移动端键盘高度推算：键盘高度只由 visualViewport 的“高度收缩”决定，
+// 即 window.innerHeight - vv.height；**不再减去 vv.offsetTop**。
+// 原因：vv.offsetTop 反映的是“页面滚动偏移”，不是键盘高度。原来减去它，
+// 在 iOS 上拖动背后的页面（页面滚动 / rubber-band）会改变 offsetTop，
+// 进而错误改写 --kb-offset，把 position:fixed 的搜索弹窗被动顶上去。
 const onVVResize = () => {
   const vv = typeof window !== 'undefined' ? window.visualViewport : null;
   if (!vv) return;
-  const kh = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+  const kh = Math.max(0, Math.round(window.innerHeight - vv.height));
   keyboardH.value = kh;
   if (isFocused.value) updatePopupPos();
 };
@@ -766,10 +770,11 @@ onMounted(() => {
   };
   window.addEventListener('resize', widthChangeHandler);
 
-  // 键盘检测：监听 VisualViewport 变化（键盘唤起/收起），实时把弹窗抬到键盘上方
+  // 键盘检测：只监听 VisualViewport 的 resize（键盘唤起/收起会收缩 vv.height，触发 resize）；
+  // 不监听 scroll —— 拖动背后的页面（页面滚动）也会触发 scroll，会反复扰动键盘高度推算，
+  // 从而把 fixed 弹窗被动顶上去。键盘检测本身只依赖 height，所以移除 scroll 无影响。
   if (typeof window !== 'undefined' && window.visualViewport) {
     window.visualViewport.addEventListener('resize', onVVResize);
-    window.visualViewport.addEventListener('scroll', onVVResize);
   }
 
   resizeHandler = () => { updatePopupPos(); };
@@ -810,7 +815,6 @@ onBeforeUnmount(() => {
   if (widthChangeHandler) window.removeEventListener('resize', widthChangeHandler);
   if (typeof window !== 'undefined' && window.visualViewport) {
     window.visualViewport.removeEventListener('resize', onVVResize);
-    window.visualViewport.removeEventListener('scroll', onVVResize);
   }
   window.removeEventListener('pointermove', onResizeMove);
   window.removeEventListener('pointerup', stopResize);
