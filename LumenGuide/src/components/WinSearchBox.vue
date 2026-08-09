@@ -1365,9 +1365,9 @@ defineExpose({ focus: () => inputRef.value?.focus() });
     font-size: 16px;
   }
 
-  /* 空白态内边距缩小 */
+  /* 空白态内边距缩小，与搜索结果/无结果区域保持一致，确保三块内容区等宽 */
   .win-search-empty {
-    padding: 16px 20px 12px 20px;
+    padding: 12px 16px 8px 16px;
   }
 
   /* 最近/收藏改成上下排列 */
