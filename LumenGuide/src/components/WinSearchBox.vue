@@ -49,7 +49,7 @@
           v-if="showPopup"
           ref="popupRef"
           class="win-search-popup"
-          :class="{ 'with-content': !!query, 'is-empty': !query, 'nav-dropdown': !isSmallScreen }"
+          :class="{ 'with-content': !!query, 'is-empty': !query, 'nav-dropdown': !isSmallScreen, 'is-snapping-close': isSnapClosing }"
           :style="popupStyle">
           <!-- 拖动把手：仅小屏（移动端底部抽屉）显示，按住上下拖动调整大小；桌面/顶部/自动模式不显示、不可移动 -->
           <div
@@ -279,6 +279,8 @@ const keyboardH = ref(0);
 const popupOpen = ref(false);
 // 小屏拖拽状态：拖拽中禁用过渡以便实时跟随手指；释放后恢复过渡回弹
 const dragging = ref(false);
+// 小屏：拖拽松开后“向下滑出屏幕”的关闭动画中
+const isSnapClosing = ref(false);
 
 // Text（对标 AutoSuggestBox.Text）
 const query = computed({
@@ -478,21 +480,16 @@ const popupStyle = computed(() => {
       return style;
     }
 
-    // 键盘升起且未锁定高度：紧凑态（有结果只显示一条；空白态按可用空间自适应）
-    if (kb > 80) {
-      if (query.value && flatSuggestions.value.length) {
-        // 紧凑态：刚好显示一条结果 = 把手(28) + 分组标题(32) + 结果项(76) + 页脚(44) + padding(16) ≈ 196
-        const compactH = Math.min(196, maxAvailableH);
-        style.height = compactH + 'px';
-        style.maxHeight = compactH + 'px';
-      } else {
-        // 空白态（最近访问/收藏）：限制最大高度不超出键盘上方可用区域
-        style.maxHeight = maxAvailableH + 'px';
-      }
+    // 小屏有输入时：紧凑态（刚好显示一条结果/无结果提示 ≈ 196），
+    // 这样有结果和无结果弹窗宽度/高度完全一致。
+    if (query.value) {
+      const compactH = Math.min(196, maxAvailableH);
+      style.height = compactH + 'px';
+      style.maxHeight = compactH + 'px';
       return style;
     }
 
-    // 无键盘时：也限制最大高度不覆盖搜索框，由内容撑开
+    // 空白态（最近访问/收藏）：限制最大高度不覆盖搜索框，由内容撑开
     style.maxHeight = maxAvailableH + 'px';
     return style;
   }
@@ -563,9 +560,14 @@ const stopResize = () => {
   dragging.value = false;
   window.removeEventListener('pointermove', onResizeMove);
   window.removeEventListener('pointerup', stopResize);
-  // 手指松开后，如果面板已缩到“显示不下一行文字”，则关闭弹窗
-  if (popupHeight.value !== null && popupHeight.value <= dragCloseHeight) {
-    closePopup();
+  // 手指松开后，如果面板已缩到“显示不下一行文字”，先播放“向下滑出屏幕”动画再真正关闭
+  if (popupHeight.value !== null && popupHeight.value <= dragCloseHeight && !isSnapClosing.value) {
+    isSnapClosing.value = true;
+    setTimeout(() => {
+      closePopup();
+      isSnapClosing.value = false;
+      popupHeight.value = null; // 重置锁定高度，下次打开恢复默认
+    }, 260);
   }
 };
 
@@ -574,6 +576,7 @@ const closePopup = () => {
   popupOpen.value = false;
   dragging.value = false;
   isResizing = false;
+  isSnapClosing.value = false;
   outsideTapCount = 0;
   inputRef.value?.blur();
   window.removeEventListener('pointermove', onResizeMove);
@@ -1214,9 +1217,12 @@ defineExpose({ focus: () => inputRef.value?.focus() });
 }
 
 .win-search-no-results-body {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  width: 100%;
+  align-self: stretch;
 }
 
 .win-search-no-results-query {
@@ -1345,6 +1351,15 @@ defineExpose({ focus: () => inputRef.value?.focus() });
     opacity: 0;
   }
 
+  /* 拖拽释放到底后的关闭动画：手指松开时由 JS 添加 is-snapping-close 类触发，
+     弹窗先向下滑到屏幕边缘再真正卸载。 */
+  .win-search-popup.is-snapping-close {
+    transform: translateY(100%) !important;
+    opacity: 0 !important;
+    transition: transform 0.26s cubic-bezier(0.32, 0.08, 0.24, 1), opacity 0.26s ease !important;
+    will-change: transform, opacity;
+  }
+
   /* 输入框 16px：避免 iOS Safari 点击搜索框时页面被自动放大 */
   .win-search-input {
     font-size: 16px;
@@ -1368,6 +1383,11 @@ defineExpose({ focus: () => inputRef.value?.focus() });
 
   /* 搜索结果区域缩小内边距 */
   .win-search-results {
+    padding: 12px 16px 8px 16px;
+  }
+
+  /* 无结果提示与结果区域内边距一致，保持宽度统一 */
+  .win-search-no-results {
     padding: 12px 16px 8px 16px;
   }
 
