@@ -357,14 +357,18 @@ const updatePopupPos = () => {
 const getLayoutH = (): number =>
   (typeof document !== 'undefined' && document.documentElement?.clientHeight) || window.innerHeight;
 
-// 移动端键盘高度推算：键盘高度 = 布局视口高度 - 可视视口高度（vv.height）。
-// 只依赖高度收缩，不依赖 vv.offsetTop（那是页面滚动偏移，会扰动定位）。
+// 移动端键盘高度推算：键盘高度 = 布局视口高度 - 可视视口高度 - visualViewport 偏移。
+// layoutH（documentElement.clientHeight）不受 iOS 地址栏折叠影响，比较稳定；
+// vv.height 是可视区域高度，键盘弹出时会缩小；vv.offsetTop 是 visual viewport
+// 相对于 layout viewport 顶部的偏移。三者相减才等于键盘真实高度。
+// 注意：只监听 resize，不监听 scroll —— 页面滚动也会改变 offsetTop，若监听
+// scroll 会把页面滚动误当成键盘变化，导致面板被背景滚动顶上去。
 const onVVResize = () => {
   const vv = typeof window !== 'undefined' ? window.visualViewport : null;
   if (!vv) return;
   const layoutH = getLayoutH();
-  const kh = Math.max(0, Math.round(layoutH - vv.height));
-  // 上限保护：键盘不可能超过屏幕 75%，避免极端瞬时值（如地址栏抖动残留）把面板抬离键盘过远
+  const kh = Math.max(0, Math.round(layoutH - vv.height - vv.offsetTop));
+  // 上限保护：键盘不可能超过屏幕 75%，避免极端瞬时值把面板抬离键盘过远
   keyboardH.value = Math.min(kh, Math.round(layoutH * 0.75));
   if (isFocused.value) updatePopupPos();
 };
