@@ -360,16 +360,28 @@ const getLayoutH = (): number =>
 // 移动端键盘高度推算：键盘高度 = 布局视口高度 - 可视视口高度 - visualViewport 偏移。
 // layoutH（documentElement.clientHeight）不受 iOS 地址栏折叠影响，比较稳定；
 // vv.height 是可视区域高度，键盘弹出时会缩小；vv.offsetTop 是 visual viewport
-// 相对于 layout viewport 顶部的偏移。三者相减才等于键盘真实高度。
-// 注意：只监听 resize，不监听 scroll —— 页面滚动也会改变 offsetTop，若监听
-// scroll 会把页面滚动误当成键盘变化，导致面板被背景滚动顶上去。
+// 相对于 layout viewport 顶部的偏移（键盘弹出时 iOS 会滚动可视视口让输入框可见，offsetTop 变为正值）。
+// 三者相减才等于键盘真实高度——缺了 offsetTop，面板会被抬得比键盘顶还高/露出背后正文。
+//
+// 监听策略：同时监听 resize 与 scroll。键盘弹出/收起改变 vv.height（resize），
+// 而键盘弹出动画中 iOS 滚动可视视口改变 vv.offsetTop（scroll）——只监听 resize 会漏掉
+// offsetTop 的实时变化，导致面板没贴住键盘顶（"一起上去"）。
+// 关键区分：仅当"键盘确实弹起"（vv.height 明显小于 layoutH）时才把 offsetTop
+// 计入定位；无键盘/失焦时回落到 keyboardH=0，面板贴屏幕底（bottom:0），
+// 这样"拖动背景页面"不会因 scroll 把面板顶起来（背景滚动时 vv.height 不变，不进入键盘态分支）。
 const onVVResize = () => {
   const vv = typeof window !== 'undefined' ? window.visualViewport : null;
   if (!vv) return;
   const layoutH = getLayoutH();
-  const kh = Math.max(0, Math.round(layoutH - vv.height - vv.offsetTop));
-  // 上限保护：键盘不可能超过屏幕 75%，避免极端瞬时值把面板抬离键盘过远
-  keyboardH.value = Math.min(kh, Math.round(layoutH * 0.75));
+  const keyboardVisible = vv.height < layoutH - 80; // 高度收缩 ≥80px 视为键盘弹起
+  if (isFocused.value && keyboardVisible) {
+    const kh = Math.max(0, Math.round(layoutH - vv.height - vv.offsetTop));
+    // 上限保护：键盘不可能超过屏幕 75%，避免极端瞬时值把面板抬离键盘过远
+    keyboardH.value = Math.min(kh, Math.round(layoutH * 0.75));
+  } else {
+    // 无键盘 或 失焦：面板贴屏幕底，不被背景滚动影响
+    keyboardH.value = 0;
+  }
   if (isFocused.value) updatePopupPos();
 };
 
@@ -646,6 +658,7 @@ const onFocus = () => {
   isFocused.value = true;
   popupOpen.value = true; // 小屏：弹窗打开（与焦点解耦，键盘收起不关闭）
   outsideTapCount = 0;
+  onVVResize(); // 若键盘此时已弹出，立即把面板贴到键盘顶（而非等下一个事件）
   updatePopupPos();
 };
 
@@ -782,11 +795,14 @@ onMounted(() => {
   };
   window.addEventListener('resize', widthChangeHandler);
 
-  // 键盘检测：只监听 VisualViewport 的 resize（键盘唤起/收起会收缩 vv.height，触发 resize）；
-  // 不监听 scroll —— 拖动背后的页面（页面滚动）也会触发 scroll，会反复扰动键盘高度推算，
-  // 从而把 fixed 弹窗被动顶上去。键盘检测本身只依赖 height，所以移除 scroll 无影响。
+  // 键盘检测：同时监听 VisualViewport 的 resize 与 scroll。
+  // resize（键盘唤起/收起改变 vv.height）与 scroll（键盘弹出动画中 iOS 滚动可视视口改变
+  // vv.offsetTop）都要捕捉，否则面板不会贴住键盘顶。是否计入 offsetTop 由 onVVResize 内的
+  // "键盘态"判定（vv.height 是否明显收缩）把关——背景滚动不改变 vv.height，不会进入键盘态分支，
+  // 因此"拖动背后页面"不会把面板顶起来。
   if (typeof window !== 'undefined' && window.visualViewport) {
     window.visualViewport.addEventListener('resize', onVVResize);
+    window.visualViewport.addEventListener('scroll', onVVResize);
   }
 
   resizeHandler = () => { updatePopupPos(); };
@@ -827,6 +843,7 @@ onBeforeUnmount(() => {
   if (widthChangeHandler) window.removeEventListener('resize', widthChangeHandler);
   if (typeof window !== 'undefined' && window.visualViewport) {
     window.visualViewport.removeEventListener('resize', onVVResize);
+    window.visualViewport.removeEventListener('scroll', onVVResize);
   }
   window.removeEventListener('pointermove', onResizeMove);
   window.removeEventListener('pointerup', stopResize);
