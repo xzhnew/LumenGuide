@@ -351,16 +351,21 @@ const updatePopupPos = () => {
   }
 };
 
-// 移动端键盘高度推算：键盘高度只由 visualViewport 的“高度收缩”决定，
-// 即 window.innerHeight - vv.height；**不再减去 vv.offsetTop**。
-// 原因：vv.offsetTop 反映的是“页面滚动偏移”，不是键盘高度。原来减去它，
-// 在 iOS 上拖动背后的页面（页面滚动 / rubber-band）会改变 offsetTop，
-// 进而错误改写 --kb-offset，把 position:fixed 的搜索弹窗被动顶上去。
+// 稳定的布局视口高度：iOS Safari 的 window.innerHeight 会因地址栏展开/折叠、键盘顶起页面而抖动，
+// 用它推算键盘高度会把面板错误抬高（露出背后正文）。改用 document.documentElement.clientHeight，
+// 它是布局视口尺寸，不受地址栏折叠影响，在键盘弹出前后保持稳定。
+const getLayoutH = (): number =>
+  (typeof document !== 'undefined' && document.documentElement?.clientHeight) || window.innerHeight;
+
+// 移动端键盘高度推算：键盘高度 = 布局视口高度 - 可视视口高度（vv.height）。
+// 只依赖高度收缩，不依赖 vv.offsetTop（那是页面滚动偏移，会扰动定位）。
 const onVVResize = () => {
   const vv = typeof window !== 'undefined' ? window.visualViewport : null;
   if (!vv) return;
-  const kh = Math.max(0, Math.round(window.innerHeight - vv.height));
-  keyboardH.value = kh;
+  const layoutH = getLayoutH();
+  const kh = Math.max(0, Math.round(layoutH - vv.height));
+  // 上限保护：键盘不可能超过屏幕 75%，避免极端瞬时值（如地址栏抖动残留）把面板抬离键盘过远
+  keyboardH.value = Math.min(kh, Math.round(layoutH * 0.75));
   if (isFocused.value) updatePopupPos();
 };
 
@@ -475,7 +480,7 @@ const popupStyle = computed(() => {
     const rootRect = rootRef.value?.getBoundingClientRect();
     const searchBoxBottom = rootRect?.bottom ?? 56;
     const gap = 8;
-    const viewportBottom = kb > 80 ? window.innerHeight - kb : window.innerHeight;
+    const viewportBottom = kb > 80 ? getLayoutH() - kb : getLayoutH();
     const maxAvailableH = Math.max(120, viewportBottom - searchBoxBottom - gap);
 
     // 用户拖拽锁定了高度：以拖拽高度为准，但仍受“不覆盖搜索框”限制
@@ -536,7 +541,7 @@ const onResizeMove = (e: PointerEvent) => {
     const rootRect = rootRef.value.getBoundingClientRect();
     const kb = keyboardH.value;
     const gap = 8;
-    const viewportBottom = kb > 80 ? window.innerHeight - kb : window.innerHeight;
+    const viewportBottom = kb > 80 ? getLayoutH() - kb : getLayoutH();
     // 向上最大高度：弹窗顶部不得低于搜索框底部 + gap，避免覆盖搜索框
     const maxH = Math.max(120, viewportBottom - rootRect.bottom - gap);
     // 向下最小高度：只剩把手（手指按住时允许贴到屏幕最底部）
@@ -641,7 +646,10 @@ const onFocus = () => {
 };
 
 const onBlur = () => {
-  setTimeout(() => { isFocused.value = false; }, 150);
+  setTimeout(() => {
+    isFocused.value = false;
+    keyboardH.value = 0; // 清除残留键盘高度，避免面板被永久抬高露出空隙
+  }, 150);
 };
 
 const onKeydown = (e: KeyboardEvent) => {
