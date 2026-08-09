@@ -50,7 +50,8 @@
           ref="popupRef"
           class="win-search-popup"
           :class="{ 'with-content': !!query, 'is-empty': !query, 'nav-dropdown': !isSmallScreen, 'is-snapping-close': isSnapClosing }"
-          :style="popupStyle">
+          :style="popupStyle"
+          @pointerdown="onPopupPointerDown">
           <!-- 拖动把手：仅小屏（移动端底部抽屉）显示，按住上下拖动调整大小；桌面/顶部/自动模式不显示、不可移动 -->
           <div
             v-if="isSmallScreen"
@@ -116,9 +117,10 @@
 
           <!-- 搜索结果：分类分组显示 -->
           <div v-else class="win-search-results">
-            <div v-if="!flatSuggestions.length" class="win-search-no-results">
-              <div class="win-search-no-results-icon"><span class="icon">{{ '\uE721' }}</span></div>
-              <div class="win-search-no-results-body">
+            <div v-if="!flatSuggestions.length" class="win-search-hero win-search-no-results-hero">
+              <div class="win-search-hero-icon"><span class="icon">{{ '\uE721' }}</span></div>
+              <div class="win-search-hero-title">搜索内容</div>
+              <div class="win-search-hero-desc">
                 <span class="win-search-no-results-query">{{ query }}</span>
                 <span>没有匹配结果</span>
               </div>
@@ -480,17 +482,10 @@ const popupStyle = computed(() => {
       return style;
     }
 
-    // 小屏有输入时：紧凑态（刚好显示一条结果/无结果提示 ≈ 196），
-    // 这样有结果和无结果弹窗宽度/高度完全一致。
-    if (query.value) {
-      const compactH = Math.min(196, maxAvailableH);
-      style.height = compactH + 'px';
-      style.maxHeight = compactH + 'px';
-      return style;
-    }
-
-    // 空白态（最近访问/收藏）：限制最大高度不覆盖搜索框，由内容撑开
-    style.maxHeight = maxAvailableH + 'px';
+    // 小屏默认高度：统一 250px；所有状态（空白/无结果/列表）默认尺寸一样。
+    const compactH = Math.min(250, maxAvailableH);
+    style.height = compactH + 'px';
+    style.maxHeight = compactH + 'px';
     return style;
   }
 
@@ -505,7 +500,8 @@ const popupStyle = computed(() => {
 let dragStart = { y: 0, bottom: 0, height: 0 };
 // 小屏：弹窗之外的点击计数（点两次才算关闭，避免第一次点击只是收起软键盘）
 let outsideTapCount = 0;
-// 小屏向下拖拽关闭的阈值：当弹窗高度缩到“显示不下一行文字”即触发关闭（此时面板已接近屏幕底部）
+// 小屏向下拖拽关闭的阈值：当弹窗高度缩到“显示不下一行文字”即触发关闭。
+// 手指可以一直拖到只剩把手（32px）贴到屏幕边缘，松开后才滑出关闭。
 let dragCloseHeight = 56;
 
 const startResize = (e: PointerEvent) => {
@@ -513,9 +509,14 @@ const startResize = (e: PointerEvent) => {
   const rect = popupRef.value.getBoundingClientRect();
   dragStart = { y: e.clientY, bottom: rect.bottom, height: rect.height };
   popupHeight.value = rect.height; // 锁定当前高度，避免首帧跳动
-  // 测量“一行文字”的高度作为关闭阈值：缩到不足一行即关闭
-  const firstRow = popupRef.value.querySelector('.win-search-suggestion, .win-search-simple-item');
-  dragCloseHeight = firstRow ? (firstRow as HTMLElement).offsetHeight + 4 : 56;
+  // 关闭阈值：向下拖到该高度（含）以下、松手即播放滑出关闭动画。
+  // 空白态/无结果态（hero 圆形图标）阈值 230px；列表态（有结果/最近访问收藏）阈值 150px。
+  const heroIcon = popupRef.value.querySelector('.win-search-hero-icon');
+  if (heroIcon) {
+    dragCloseHeight = 230;
+  } else {
+    dragCloseHeight = 150;
+  }
   isResizing = true; // 标记拖拽中，阻止 updatePopupPos 覆盖位置
   dragging.value = true;
   outsideTapCount = 0;
@@ -571,6 +572,47 @@ const stopResize = () => {
   }
 };
 
+// ===== 面板下滑关闭（小屏）：除把手、输入框、可滚动结果区外，在面板内容上向下滑动即可关闭 =====
+let swipeStartY = 0;
+let swipeTracking = false;
+const SWIPE_CLOSE_THRESHOLD = 80;
+
+const onPopupPointerDown = (e: PointerEvent) => {
+  if (!isSmallScreen.value || !popupRef.value) return;
+  const t = e.target as HTMLElement;
+  // 把手自己处理拖拽；输入框保留焦点行为
+  if (t.closest('.win-search-handle') || t.closest('.win-search-input')) return;
+  // 结果区可滚动时不接管（避免和滚动冲突，仍可用把手关闭）
+  const resultsEl = popupRef.value.querySelector('.win-search-results');
+  if (resultsEl && resultsEl.contains(t) && resultsEl.scrollHeight > resultsEl.clientHeight + 1) return;
+  swipeTracking = true;
+  swipeStartY = e.clientY;
+  window.addEventListener('pointermove', onPopupPointerMove);
+  window.addEventListener('pointerup', onPopupPointerUp);
+};
+
+const onPopupPointerMove = (e: PointerEvent) => {
+  if (!swipeTracking) return;
+  const deltaY = e.clientY - swipeStartY;
+  if (deltaY > SWIPE_CLOSE_THRESHOLD && !isSnapClosing.value) {
+    swipeTracking = false;
+    window.removeEventListener('pointermove', onPopupPointerMove);
+    window.removeEventListener('pointerup', onPopupPointerUp);
+    isSnapClosing.value = true;
+    setTimeout(() => {
+      closePopup();
+      isSnapClosing.value = false;
+      popupHeight.value = null;
+    }, 260);
+  }
+};
+
+const onPopupPointerUp = () => {
+  swipeTracking = false;
+  window.removeEventListener('pointermove', onPopupPointerMove);
+  window.removeEventListener('pointerup', onPopupPointerUp);
+};
+
 // 关闭弹窗（小屏）：重置所有拖拽/焦点状态并收起键盘
 const closePopup = () => {
   popupOpen.value = false;
@@ -581,6 +623,9 @@ const closePopup = () => {
   inputRef.value?.blur();
   window.removeEventListener('pointermove', onResizeMove);
   window.removeEventListener('pointerup', stopResize);
+  window.removeEventListener('pointermove', onPopupPointerMove);
+  window.removeEventListener('pointerup', onPopupPointerUp);
+  swipeTracking = false;
 };
 
 const onFocus = () => {
@@ -911,11 +956,12 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   overflow: hidden;
   /* 小屏拖拽释放后回弹到底部的过渡（拖拽中由内联 transition:none 覆盖） */
   transition: transform 0.2s ease;
+  /* 移动端由 JS 接管下滑关闭手势，防止浏览器默认滚动抢占 */
+  touch-action: none;
 }
 
-.win-search-popup.is-empty {
-  min-height: 320px;
-}
+/* .win-search-popup.is-empty 不再设置 min-height：小屏下高度由 JS 统一控制（紧凑态 196px），
+   避免内容少时被撑高、内容多时被 min-height 限制。桌面端也由内容自然撑开。 */
 
 /* 桌面 / 顶部 / 自动模式：固定下拉卡片（不可拖拽）。
    与小屏底部抽屉区分，但顶部不加任何强调色，保持纯净材质观感。 */
@@ -1107,6 +1153,8 @@ defineExpose({ focus: () => inputRef.value?.focus() });
   flex: 1;
   overflow-y: auto;
   padding: 16px 32px 8px 32px;
+  /* 结果区保留垂直滚动，不被 popup 的 touch-action:none 覆盖 */
+  touch-action: pan-y;
 }
 
 .win-search-list {
