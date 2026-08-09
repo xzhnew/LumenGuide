@@ -463,9 +463,16 @@ const popupStyle = computed(() => {
     // 键盘升起：底部贴键盘顶沿
     if (kb > 80) style['--kb-offset'] = kb + 'px';
 
-    // 用户拖拽锁定了高度：以拖拽高度为准（覆盖紧凑态/自动高度），底边贴底从底部向上撑高
-    if (popupHeight.value) {
-      const h = popupHeight.value;
+    // 计算可用最大高度：弹窗顶部不得低于搜索框底部 + gap，避免覆盖搜索框
+    const rootRect = rootRef.value?.getBoundingClientRect();
+    const searchBoxBottom = rootRect?.bottom ?? 56;
+    const gap = 8;
+    const viewportBottom = kb > 80 ? window.innerHeight - kb : window.innerHeight;
+    const maxAvailableH = Math.max(120, viewportBottom - searchBoxBottom - gap);
+
+    // 用户拖拽锁定了高度：以拖拽高度为准，但仍受“不覆盖搜索框”限制
+    if (popupHeight.value !== null) {
+      const h = Math.min(popupHeight.value, maxAvailableH);
       style.height = h + 'px';
       style.maxHeight = h + 'px';
       return style;
@@ -474,16 +481,19 @@ const popupStyle = computed(() => {
     // 键盘升起且未锁定高度：紧凑态（有结果只显示一条；空白态按可用空间自适应）
     if (kb > 80) {
       if (query.value && flatSuggestions.value.length) {
-        // 仅显示一条搜索结果（把手 ~20 + 一条结果 ~76 + 上下内边距）
-        const compactH = 104;
+        // 紧凑态：刚好显示一条结果 = 把手(28) + 分组标题(32) + 结果项(76) + 页脚(44) + padding(16) ≈ 196
+        const compactH = Math.min(196, maxAvailableH);
         style.height = compactH + 'px';
         style.maxHeight = compactH + 'px';
       } else {
         // 空白态（最近访问/收藏）：限制最大高度不超出键盘上方可用区域
-        style.maxHeight = Math.max(140, window.innerHeight - kb - 12) + 'px';
+        style.maxHeight = maxAvailableH + 'px';
       }
       return style;
     }
+
+    // 无键盘时：也限制最大高度不覆盖搜索框，由内容撑开
+    style.maxHeight = maxAvailableH + 'px';
     return style;
   }
 
@@ -520,13 +530,19 @@ const onResizeMove = (e: PointerEvent) => {
   const deltaY = e.clientY - dragStart.y;
   // 移动端底部抽屉：上下拖动 = 调整面板高度（向上更高、向下更矮）
   if (isSmallScreen.value) {
+    if (!rootRef.value) return;
+    const rootRect = rootRef.value.getBoundingClientRect();
     const kb = keyboardH.value;
-    const maxH = Math.round(kb > 80 ? window.innerHeight - kb - 12 : window.innerHeight * 0.92);
+    const gap = 8;
+    const viewportBottom = kb > 80 ? window.innerHeight - kb : window.innerHeight;
+    // 向上最大高度：弹窗顶部不得低于搜索框底部 + gap，避免覆盖搜索框
+    const maxH = Math.max(120, viewportBottom - rootRect.bottom - gap);
+    // 向下最小高度：只剩把手（手指按住时允许贴到屏幕最底部）
+    const minH = 32;
     // 向上拖（deltaY<0）→ 更高；向下拖（deltaY>0）→ 更矮
-    const h = Math.max(8, Math.min(maxH, dragStart.height - deltaY));
+    const h = Math.max(minH, Math.min(maxH, dragStart.height - deltaY));
     popupHeight.value = h;
-    // 向下拖到“显示不下一行文字”（高度不足一行，面板已接近屏幕底部）→ 关闭
-    if (h <= dragCloseHeight) closePopup();
+    // 拖动过程中不自动关闭，手指松开后在 stopResize 中判断
     return;
   }
   // 桌面：向上拖 → 变高，底边固定、顶边跟随
@@ -547,6 +563,10 @@ const stopResize = () => {
   dragging.value = false;
   window.removeEventListener('pointermove', onResizeMove);
   window.removeEventListener('pointerup', stopResize);
+  // 手指松开后，如果面板已缩到“显示不下一行文字”，则关闭弹窗
+  if (popupHeight.value !== null && popupHeight.value <= dragCloseHeight) {
+    closePopup();
+  }
 };
 
 // 关闭弹窗（小屏）：重置所有拖拽/焦点状态并收起键盘
@@ -638,13 +658,19 @@ const clearQuery = () => {
 // 小屏：任意区域（除弹窗/搜索框）点两次关闭；桌面：仅在主内容区（.win-nav-content）点两次关闭。
 const onDocPointerDown = (e: PointerEvent) => {
   const t = e.target as HTMLElement;
+  // 点在弹窗内部或搜索框内部：不算“外部点击”，计数器清零
+  if (popupRef.value?.contains(t) || rootRef.value?.contains(t)) {
+    outsideTapCount = 0;
+    return;
+  }
+  // 点击导航栏（左面板 / 顶部栏）任意位置都立即关闭搜索弹窗——搜索框本身已在上面排除。
+  // 这样无论移动端还是桌面端，点导航栏都不会出现“弹窗还赖着”的怪异情况。
+  if (t.closest('.win-nav-left-panel') || t.closest('.win-nav-top-bar')) {
+    closePopup();
+    return;
+  }
   if (isSmallScreen.value) {
     if (!popupOpen.value) return;
-    // 点在弹窗内部或搜索框内部：不算“外部点击”，计数器清零
-    if (popupRef.value?.contains(t) || rootRef.value?.contains(t)) {
-      outsideTapCount = 0;
-      return;
-    }
     outsideTapCount += 1;
     if (outsideTapCount >= 2) closePopup();
     return;
@@ -653,10 +679,6 @@ const onDocPointerDown = (e: PointerEvent) => {
   // 桌面版：点击主内容区（.win-nav-content）两次关闭弹窗；第一次保持打开，第二次关闭。
   // 弹窗已与输入框焦点解耦（popupOpen 控制显隐），故第一次点击不会因失焦而关闭。
   if (!showPopup.value) return;
-  if (popupRef.value?.contains(t) || rootRef.value?.contains(t)) {
-    outsideTapCount = 0;
-    return;
-  }
   const contentEl = document.querySelector('.win-nav-content');
   if (!contentEl?.contains(t)) {
     outsideTapCount = 0;
@@ -1311,6 +1333,16 @@ defineExpose({ focus: () => inputRef.value?.focus() });
 
   .win-search-handle:hover::after {
     opacity: 0.8;
+  }
+
+  /* 手机端关闭动画：弹窗（顶部小横条）向下滑到屏幕边缘后消失 */
+  .search-popup-leave-active {
+    transition: transform 0.26s cubic-bezier(0.32, 0.08, 0.24, 1), opacity 0.26s ease;
+    will-change: transform, opacity;
+  }
+  .search-popup-leave-to {
+    transform: translateY(100%);
+    opacity: 0;
   }
 
   /* 输入框 16px：避免 iOS Safari 点击搜索框时页面被自动放大 */
